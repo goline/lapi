@@ -1,2 +1,2 @@
 # lapi
-Light framework for Golang
+Light API for Golang
