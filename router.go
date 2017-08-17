@@ -4,15 +4,15 @@ import "net/http"
 
 // Router is an application's router
 type Router interface {
-	VerbDescriber
+	RouteActioner
 	RouteInformer
 	RouteRegister
 	RouteMatcher
 	RouteManager
 }
 
-// VerbDescriber uses common HTTP verbs to register routes
-type VerbDescriber interface {
+// RouteActioner uses common HTTP verbs to register routes
+type RouteActioner interface {
 	// Get registers a GET route handler
 	Get(path string, handler Handler) Route
 

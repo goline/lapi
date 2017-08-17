@@ -4,7 +4,7 @@ package lapi
 type Requester interface {
 	RequestIdentifier
 	RequestResolver
-	RequestParameter
+	RequestInput
 }
 
 // RequestIdentifier identifies a request
@@ -23,6 +23,6 @@ type RequestResolver interface {
 }
 
 // RequestParameter helps to parameterize request
-type RequestParameter interface {
-	Bagger
+type RequestInput interface {
+	Input
 }
