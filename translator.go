@@ -2,6 +2,6 @@ package lapi
 
 // Translator helps translation
 type Translator interface {
-	// T returns a translated string
-	T(word string, args ...interface{}) string
+	// Translate returns a translated string
+	Translate(word string, args ...interface{}) string
 }
