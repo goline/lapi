@@ -9,10 +9,10 @@ type App interface {
 	Register(loader Loader) App
 
 	// Request returns application's request
-	Request() Requester
+	Request() Request
 
 	// Response returns application's response
-	Response() Responser
+	Response() Response
 
 	// Run brings application up
 	Run(config Config, container Container)

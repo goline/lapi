@@ -2,8 +2,8 @@ package lapi
 
 import "net/http"
 
-// Responser is a application's response
-type Responser interface {
+// Response is a application's response
+type Response interface {
 	// Status sets HTTP status code
 	Status(status int)
 

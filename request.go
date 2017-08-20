@@ -1,7 +1,7 @@
 package lapi
 
-// Requester represents for an application's request
-type Requester interface {
+// Request represents for an application's request
+type Request interface {
 	RequestIdentifier
 	RequestResolver
 	RequestInput

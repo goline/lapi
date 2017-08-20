@@ -53,7 +53,7 @@ type RouteGrouper interface {
 // RouteMatcher matches request to route
 type RouteMatcher interface {
 	// Route performs routing
-	Route(r http.Request) Requester
+	Route(r http.Request) Request
 
 	// Match tests and returns matched route for proposed request
 	Match(r http.Request) Route
