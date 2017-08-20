@@ -4,15 +4,15 @@ import "net/http"
 
 // Router is an application's router
 type Router interface {
-	RouteActioner
+	RouteRestfuller
 	RouteInformer
 	RouteRegister
 	RouteMatcher
 	RouteManager
 }
 
-// RouteActioner uses common HTTP verbs to register routes
-type RouteActioner interface {
+// RouteRestfuller uses common HTTP verbs to register routes
+type RouteRestfuller interface {
 	// Get registers a GET route handler
 	Get(path string, handler Handler) Route
 
@@ -42,6 +42,12 @@ type RouteInformer interface {
 type RouteRegister interface {
 	// Register enrolls a http route handler
 	Register(method string, path string, handler Handler) Route
+}
+
+// RouteGrouper groups sub routes
+type RouteGrouper interface {
+	// Group collects a number of routes
+	Group(prefix string) Router
 }
 
 // RouteMatcher matches request to route

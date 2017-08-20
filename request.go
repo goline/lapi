@@ -7,6 +7,12 @@ type Requester interface {
 	RequestInput
 }
 
+// RequestVersioner handles multiple versions
+type RequestVersioner interface {
+	// Version returns version string
+	Version() string
+}
+
 // RequestIdentifier identifies a request
 type RequestIdentifier interface {
 	// Method returns request's method
@@ -22,7 +28,7 @@ type RequestResolver interface {
 	Route() Route
 }
 
-// RequestParameter helps to parameterize request
+// RequestInput contains request's input
 type RequestInput interface {
-	Input
+	Bag
 }

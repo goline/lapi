@@ -3,7 +3,7 @@ package lapi
 // Validator helps validate inputs
 type Validator interface {
 	// Validate checks input against rules
-	Validate(input Input, rules Rules) (bool, StackError)
+	Validate(input Bag, rules Rules) (bool, StackError)
 
 	// Translator returns an instance of Translator
 	Translator() Translator
