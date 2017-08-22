@@ -1,18 +1,36 @@
 package lapi
 
-import "net/http"
-
 // Response is a application's response
 type Response interface {
-	// Status sets HTTP status code
-	Status(status int)
+	ResponseDescriber
+	ResponseInformer
+	ResponseSender
+}
 
-	// Message sets HTTP status message
-	Message(message string)
+type ResponseInformer interface {
+	// Status gets HTTP status code
+	Status() int
 
+	// WithStatus sets HTTP status code
+	WithStatus(status int)
+
+	// Message returns HTTP status message
+	Message() string
+
+	// WithMessage sets HTTP status message
+	WithMessage(message string)
+}
+
+// ResponseDescriber handles content
+type ResponseDescriber interface {
+	// Content gets response's content
+	Content() interface{}
+
+	// WithContent sets response's content
+	WithContent(content interface{})
+}
+
+type ResponseSender interface {
 	// Send flushes response out
 	Send() error
-
-	// SendHTTP allows to send internal HTTP Response instead
-	SendHTTP(res http.Response) error
 }

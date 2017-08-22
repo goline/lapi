@@ -24,27 +24,27 @@ func NewBag() Bag {
 }
 
 type FactoryBag struct {
-	inputs map[string]interface{}
+	items map[string]interface{}
 }
 
-func (i *FactoryBag) Get(key string) (interface{}, bool) {
-	value, ok := i.inputs[key]
+func (b *FactoryBag) Get(key string) (interface{}, bool) {
+	value, ok := b.items[key]
 	return value, ok
 }
 
-func (i *FactoryBag) Set(key string, value interface{}) {
-	i.inputs[key] = value
+func (b *FactoryBag) Set(key string, value interface{}) {
+	b.items[key] = value
 }
 
-func (i *FactoryBag) Remove(key string) {
-	delete(i.inputs, key)
+func (b *FactoryBag) Remove(key string) {
+	delete(b.items, key)
 }
 
-func (i *FactoryBag) Has(key string) bool {
-	_, ok := i.inputs[key]
+func (b *FactoryBag) Has(key string) bool {
+	_, ok := b.items[key]
 	return ok
 }
 
-func (i *FactoryBag) All() map[string]interface{} {
-	return i.inputs
+func (b *FactoryBag) All() map[string]interface{} {
+	return b.items
 }
