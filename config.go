@@ -1,8 +1,8 @@
 package lapi
 
 import (
-	"time"
 	"crypto/tls"
+	"time"
 )
 
 // Config contains configuration

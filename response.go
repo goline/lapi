@@ -30,6 +30,7 @@ type ResponseDescriber interface {
 	WithContent(content interface{})
 }
 
+// ResponseSender sends response to client
 type ResponseSender interface {
 	// Send flushes response out
 	Send() error
