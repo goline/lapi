@@ -6,9 +6,13 @@ import (
 )
 
 const (
-	BindErrorInvalidInterface        = 1
-	BindErrorInvalidConcrete         = 2
-	BindErrorNotImplementedInterface = 3
+	BindErrorInvalidInterface         = 1
+	BindErrorInvalidConcrete          = 2
+	BindErrorNotImplementedInterface  = 3
+	ResolveErrorNotExistAbstract      = 4
+	ResolveErrorInvalidConcrete       = 5
+	ResolveErrorInsufficientArguments = 6
+	ResolveErrorNonValuesReturned     = 7
 )
 
 // Container acts as a dependency-injection manager
@@ -27,7 +31,7 @@ type Binder interface {
 // Resolver helps to resolve dependencies
 type Resolver interface {
 	// Resolve processes and returns a concrete of proposed abstract
-	Resolve(abstract interface{}) (concrete interface{}, err SystemError)
+	Resolve(abstract interface{}, args ...interface{}) (concrete interface{}, err SystemError)
 }
 
 // Injector works as a tool to inject dependencies
@@ -37,11 +41,11 @@ type Injector interface {
 }
 
 func NewContainer() Container {
-	return &FactoryContainer{make(map[reflect.Type]interface{})}
+	return &FactoryContainer{make(map[reflect.Type]reflect.Value)}
 }
 
 type FactoryContainer struct {
-	items map[reflect.Type]interface{}
+	items map[reflect.Type]reflect.Value
 }
 
 func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) SystemError {
@@ -60,10 +64,31 @@ func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) Syst
 	default:
 		return NewSystemError(BindErrorInvalidConcrete, fmt.Sprintf("Non-supported kind of concrete. Got %v", ct.Kind()))
 	}
+
+	cv := reflect.ValueOf(concrete)
+	c.items[at] = cv
 	return nil
 }
 
-func (c *FactoryContainer) Resolve(abstract interface{}) (concrete interface{}, err SystemError) {
+func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (concrete interface{}, err SystemError) {
+	at, err := c.interfaceOf(abstract)
+	if err != nil {
+		return nil, err
+	}
+
+	value, ok := c.items[at]
+	if ok == false {
+		return nil, NewSystemError(ResolveErrorNotExistAbstract, fmt.Sprintf("%v is not bound yet", at))
+	}
+
+	switch value.Kind() {
+	case reflect.Func:
+		return c.resolveFunc(value, args...)
+	case reflect.Struct, reflect.Ptr:
+		return value.Interface(), nil
+	default:
+		return nil, NewSystemError(ResolveErrorInvalidConcrete, fmt.Sprintf("Type %v is not supported", value.Kind()))
+	}
 	return nil, nil
 }
 
@@ -85,10 +110,33 @@ func (c *FactoryContainer) interfaceOf(value interface{}) (reflect.Type, SystemE
 	return t, nil
 }
 
-func (c *FactoryContainer) instanceOf(a reflect.Type, b reflect.Type) bool {
-	if b.Kind() != reflect.Struct || b.Kind() != reflect.Ptr || a.Kind() != reflect.Interface {
+func (c *FactoryContainer) instanceOf(abstract reflect.Type, concrete reflect.Type) bool {
+	if abstract.Kind() != reflect.Interface {
 		return false
 	}
 
-	return b.Implements(a)
+	switch concrete.Kind() {
+	case reflect.Struct, reflect.Ptr:
+		return concrete.Implements(abstract)
+	default:
+		return false
+	}
+}
+
+func (c *FactoryContainer) resolveFunc(value reflect.Value, args ...interface{}) (concrete interface{}, err SystemError) {
+	t := value.Type()
+	if len(args) != t.NumIn() {
+		return nil, NewSystemError(ResolveErrorInsufficientArguments, fmt.Sprintf("Expects to have %v input arguments. Got %v", t.NumIn(), len(args)))
+	}
+
+	in := make([]reflect.Value, t.NumIn())
+	for i, arg := range args {
+		in[i] = reflect.ValueOf(arg)
+	}
+
+	out := value.Call(in)
+	if len(out) == 0 {
+		return nil, NewSystemError(ResolveErrorNonValuesReturned, fmt.Sprintf("Expects to have at least 1 value returned. Got 0"))
+	}
+	return out[0].Interface(), nil
 }
