@@ -25,7 +25,7 @@ func TestFactoryContainer_Bind_ErrorAbstractIsNotAnInterface(t *testing.T) {
 
 func TestFactoryContainer_Bind_ErrorConcreteNotImplementAbstract(t *testing.T) {
 	c := NewContainer()
-	err := c.Bind((*Bag)(nil), FactoryError{})
+	err := c.Bind((*Bag)(nil), &FactoryError{})
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
@@ -36,12 +36,17 @@ func TestFactoryContainer_Bind_ErrorConcreteNotImplementAbstract(t *testing.T) {
 
 func TestFactoryContainer_Bind_ErrorNotSupportAbstractType(t *testing.T) {
 	c := NewContainer()
-	err := c.Bind((*Bag)(nil), "a_string")
-	if err == nil {
-		t.Errorf("Expects err is not nil")
-	}
-	if err.Code() != BindErrorInvalidConcrete {
-		t.Errorf("Expects BindErrorInvalidConcrete code. Got %v", err.Code())
+	a := make([]interface{}, 2)
+	a[0] = "a_string"
+	a[1] = FactoryError{"my_code", "my_message", errors.New("my_err")}
+	for _, i := range a {
+		err := c.Bind((*Bag)(nil), i)
+		if err == nil {
+			t.Errorf("Expects err is not nil")
+		}
+		if err.Code() != BindErrorInvalidConcrete {
+			t.Errorf("Expects BindErrorInvalidConcrete code. Got %v", err.Code())
+		}
 	}
 }
 
@@ -60,14 +65,6 @@ func TestFactoryContainer_Bind_Ptr_Ok(t *testing.T) {
 	err := c.Bind((*Error)(nil), NewError("my_code", "my_message", errors.New("my_error")))
 	if err != nil {
 		t.Errorf("Expects error is not nil")
-	}
-}
-
-func TestFactoryContainer_Bind_Struct_Ok(t *testing.T) {
-	c := NewContainer()
-	err := c.Bind((*Error)(nil), &FactoryError{"my_code", "my_message", errors.New("my_error")})
-	if err != nil {
-		t.Errorf("Expects error is nil")
 	}
 }
 
@@ -103,6 +100,22 @@ func TestFactoryContainer_Resolve_Func_Ok(t *testing.T) {
 		return NewError(code, message, err)
 	})
 	e, err := c.Resolve((*Error)(nil), "my_code", "my_message", errors.New("my_err"))
+	if err != nil {
+		t.Errorf("Expects error is nil")
+	}
+	er, ok := e.(Error)
+	if ok == false {
+		t.Errorf("Expects error is an instance of Error")
+	}
+	if er.Code() != "my_code" {
+		t.Errorf("Expects error's code is my_code")
+	}
+}
+
+func TestFactoryContainer_Resolve_Ptr_Ok(t *testing.T) {
+	c := NewContainer()
+	c.Bind((*Error)(nil), &FactoryError{"my_code", "my_message", errors.New("my_err")})
+	e, err := c.Resolve((*Error)(nil))
 	if err != nil {
 		t.Errorf("Expects error is nil")
 	}

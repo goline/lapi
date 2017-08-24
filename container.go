@@ -57,7 +57,7 @@ func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) Syst
 	ct := reflect.TypeOf(concrete)
 	switch ct.Kind() {
 	case reflect.Func:
-	case reflect.Struct, reflect.Ptr:
+	case reflect.Ptr:
 		if c.instanceOf(at, ct) == false {
 			return NewSystemError(BindErrorNotImplementedInterface, fmt.Sprintf("%v is not an instance of %v", ct, at))
 		}
@@ -84,7 +84,7 @@ func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (c
 	switch value.Kind() {
 	case reflect.Func:
 		return c.resolveFunc(value, args...)
-	case reflect.Struct, reflect.Ptr:
+	case reflect.Ptr:
 		return value.Interface(), nil
 	default:
 		return nil, NewSystemError(ResolveErrorInvalidConcrete, fmt.Sprintf("Type %v is not supported", value.Kind()))
