@@ -9,7 +9,7 @@ var contentType = []string{"application/json", "charset=utf8"}
 func TestNewHeader(t *testing.T) {
 	h := NewHeader()
 	if _, ok := h.(Header); ok == false {
-		t.Errorf("Expect an instance of Header. Got %+v", h)
+		t.Errorf("Expects an instance of Header. Got %+v", h)
 	}
 }
 
