@@ -8,5 +8,5 @@ type Hook interface {
 
 	// TearDown executes Hook after handler runs
 	// if one of hooks return false during process, hooking should be stopped
-	TearDown(req Request, res Response) bool
+	TearDown(req Request, res Response, result interface{}) bool
 }
