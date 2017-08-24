@@ -1,0 +1,32 @@
+{
+  "name": "lapi",
+  "version": "1.0.0",
+  "description": "Light API framework for Golang projects",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-exec": "^2.1.3"
+  },
+  "scripts": {
+    "start": "./node_modules/.bin/gulp dev",
+    "test": "./node_modules/.bin/gulp test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goline/lapi.git"
+  },
+  "keywords": [
+    "golang",
+    "go",
+    "lapi",
+    "api",
+    "restful"
+  ],
+  "author": "Long Do <me@dotronglong.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/goline/lapi/issues"
+  },
+  "homepage": "https://github.com/goline/lapi#readme"
+}
