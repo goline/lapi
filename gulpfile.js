@@ -1,15 +1,15 @@
 var gulp  = require('gulp');
 var exec  = require('gulp-exec');
 var child = require('child_process');
-var color = require('gulp-color');
 var chalk = require('chalk');
 
 var cmd   = 'go test';
 var files = '*.go';
 
 var logger = {
-    error: function(err) {
+    error: function(err, trace) {
         console.log(chalk.red(err));
+        console.log(chalk.gray(trace));
     },
     success: function (msg) {
         console.log(chalk.green(msg));
@@ -21,27 +21,27 @@ var logger = {
     }
 };
 
-var handleConsoleOutput = function (err, stdout) {
+var handleConsoleOutput = function (err, stdout, stderr) {
     if (err === null) {
         logger.success(stdout);
     } else {
-        logger.error(stdout);
+        logger.error(stdout, stderr);
     }
 };
 
 gulp.task('test', function() {
-    child.exec(cmd, function(err, stdout) {
+    child.exec(cmd, function(err, stdout, stderr) {
         logger.line();
-        handleConsoleOutput(err, stdout);
+        handleConsoleOutput(err, stdout, stderr);
     });
 });
 gulp.task('watch:test', ['test'], function() {
 
     gulp.watch(files, function () {
         gulp.src(files)
-            .pipe(exec(cmd, function(err, stdout) {
+            .pipe(exec(cmd, function(err, stdout, stderr) {
                 logger.line();
-                handleConsoleOutput(err, stdout);
+                handleConsoleOutput(err, stdout, stderr);
             }));
     });
 });

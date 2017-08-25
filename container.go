@@ -13,6 +13,7 @@ const (
 	ResolveErrorInvalidConcrete       = 5
 	ResolveErrorInsufficientArguments = 6
 	ResolveErrorNonValuesReturned     = 7
+	InjectErrorInvalidTargetType      = 8
 )
 
 // Container acts as a dependency-injection manager
@@ -93,10 +94,49 @@ func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (c
 }
 
 func (c *FactoryContainer) Inject(target interface{}) SystemError {
+	t := reflect.TypeOf(target)
+	switch t.Kind() {
+	case reflect.Ptr:
+	default:
+		return NewSystemError(InjectErrorInvalidTargetType, fmt.Sprintf("Injecting to %v is not supported", t.Kind()))
+	}
+
+	s := t.Elem()
+	n := s.NumField()
+	if n == 0 {
+		return nil
+	}
+	v := reflect.ValueOf(target).Elem()
+	for i := 0; i < n; i++ {
+		sf := s.Field(i)
+		if _, ok := sf.Tag.Lookup("inject"); ok == false {
+			continue
+		}
+
+		if sf.Type.Kind() != reflect.Interface {
+			continue
+		}
+
+		f := v.Field(i)
+		if f.CanSet() == false {
+			continue
+		}
+
+		o, err := c.Resolve(sf.Type)
+		if err != nil {
+			return err
+		}
+		c.Inject(o)
+		f.Set(reflect.ValueOf(o))
+	}
 	return nil
 }
 
 func (c *FactoryContainer) interfaceOf(value interface{}) (reflect.Type, SystemError) {
+	if t, ok := value.(reflect.Type); ok == true && t.Kind() == reflect.Interface {
+		return t, nil
+	}
+
 	t := reflect.TypeOf(value)
 
 	for t.Kind() == reflect.Ptr {

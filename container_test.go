@@ -127,3 +127,106 @@ func TestFactoryContainer_Resolve_Ptr_Ok(t *testing.T) {
 		t.Errorf("Expects error's code is my_code")
 	}
 }
+
+func TestFactoryContainer_Inject_ErrorInjectInvalidTargetType(t *testing.T) {
+	c := NewContainer()
+	e := FactoryError{"my_code", "my_message", errors.New("my_err")}
+	err := c.Inject(e)
+	if err == nil {
+		t.Errorf("Expects error is not nil")
+	}
+	if err.Code() != InjectErrorInvalidTargetType {
+		t.Errorf("Expects InjectErrorInvalidTargetType code. Got %v", err.Code())
+	}
+}
+
+type InjectErrorResolveErrorNotExistAbstract struct {
+	Err Error `inject:"*"`
+}
+
+func TestFactoryContainer_Inject_ErrorResolveErrorNotExistAbstract(t *testing.T) {
+	c := NewContainer()
+	in := &InjectErrorResolveErrorNotExistAbstract{}
+	err := c.Inject(in)
+	if err == nil {
+		t.Errorf("Expects error is not nil")
+	}
+	if err.Code() != ResolveErrorNotExistAbstract {
+		t.Errorf("Expects ResolveErrorNotExistAbstract code. Got %v", err.Code())
+	}
+}
+
+type InjectOk struct {
+	Err Error `inject:"*"`
+}
+
+func TestFactoryContainer_Inject_Ok(t *testing.T) {
+	c := NewContainer()
+	c.Bind((*Error)(nil), NewError("my_code", "my_message", errors.New("my_err")))
+	in := &InjectOk{}
+	err := c.Inject(in)
+	if err != nil {
+		t.Errorf("Expects error is nil")
+	}
+	if in.Err.Code() != "my_code" {
+		t.Errorf("Expects Err.Code() is my_code. Got %v", in.Err.Code())
+	}
+	if in.Err.Message() != "my_message" {
+		t.Errorf("Expects Err.Message() is my_message. Got %v", in.Err.Message())
+	}
+	if in.Err.Trace().Error() != "my_err" {
+		t.Errorf("Expects Err.Error() is my_err. Got %v", in.Err.Trace().Error())
+	}
+}
+
+type InjectRecursiveOk struct {
+	Err Error       `inject:"*"`
+	Foo InjectFooer `inject:"*"`
+}
+type InjectFooer interface {
+	Foo() string
+}
+type InjectFoo struct {
+	Baz InjectBazer `inject:"*"`
+}
+
+func (f *InjectFoo) Foo() string { return "Foo.." }
+
+type InjectBazer interface {
+	Baz() string
+}
+type InjectBaz struct{}
+
+func (b *InjectBaz) Baz() string { return "Baz.." }
+func TestFactoryContainer_Inject_Recursive_Ok(t *testing.T) {
+	// InjectRecursiveOk -> Err
+	// InjectRecursiveOk -> Foo -> Baz
+	c := NewContainer()
+	c.Bind((*Error)(nil), NewError("my_code", "my_message", errors.New("my_err")))
+	c.Bind((*InjectFooer)(nil), &InjectFoo{})
+	c.Bind((*InjectBazer)(nil), &InjectBaz{})
+	in := &InjectRecursiveOk{}
+	err := c.Inject(in)
+	if err != nil {
+		t.Errorf("Expects error is nil")
+	}
+
+	// Asserting for in.Err
+	if in.Err.Code() != "my_code" {
+		t.Errorf("Expects Err.Code() is my_code. Got %v", in.Err.Code())
+	}
+	if in.Err.Message() != "my_message" {
+		t.Errorf("Expects Err.Message() is my_message. Got %v", in.Err.Message())
+	}
+	if in.Err.Trace().Error() != "my_err" {
+		t.Errorf("Expects Err.Error() is my_err. Got %v", in.Err.Trace().Error())
+	}
+
+	// Asserting for in.Foo
+	if in.Foo.Foo() != "Foo.." {
+		t.Errorf("Expects Err.Foo() is Foo... Got %v", in.Foo.Foo())
+	}
+	if b, ok := in.Foo.(*InjectFoo); ok != true || b.Baz.Baz() != "Baz.." {
+		t.Errorf("Expects Foo is an instance of InjectFoo and Foo.Baz.Baz() is Baz... Got %v", b.Baz.Baz())
+	}
+}
