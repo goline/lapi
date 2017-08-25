@@ -14,8 +14,8 @@ type Checker interface {
 	// Check verifies value
 	Check(value interface{}) bool
 
-	// ErrorMessage returns format of error message
-	ErrorMessage() string
+	// Message returns format of error message
+	Message() string
 }
 
 // Skipper allows to skip
