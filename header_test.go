@@ -38,7 +38,7 @@ func TestFactoryHeader_Has(t *testing.T) {
 
 func TestFactoryHeader_Set(t *testing.T) {
 	h := &FactoryHeader{make(map[string][]string)}
-	h.Set("content-type", contentType)
+	h.Set("content-type", contentType...)
 	if h.items["Content-Type"][0] != "application/json" || h.items["Content-Type"][1] != "charset=utf8" {
 		t.Errorf("Expects Set to be able to set key-value")
 	}
@@ -65,7 +65,7 @@ func TestFactoryHeader_All(t *testing.T) {
 func TestFactoryHeader_Line(t *testing.T) {
 	h := &FactoryHeader{make(map[string][]string)}
 	h.items["Content-Type"] = contentType
-	if h.Line("content-TYPE") != "Content-Type: application/json, charset=utf8" {
+	if key, line := h.Line("content-TYPE"); key != "Content-Type" || line != "application/json, charset=utf8" {
 		t.Errorf("Expects Line to be correct")
 	}
 }
@@ -76,7 +76,7 @@ func TestFactoryHeader_Lines(t *testing.T) {
 	h.items["Content-Length"] = []string{"1234"}
 
 	lines := h.Lines()
-	if lines[0] != "Content-Type: application/json, charset=utf8" || lines[1] != "Content-Length: 1234" {
+	if lines["Content-Type"] != "application/json, charset=utf8" || lines["Content-Length"] != "1234" {
 		t.Errorf("Expects Lines to be correct")
 	}
 }

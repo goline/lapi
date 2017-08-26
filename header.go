@@ -9,7 +9,7 @@ type Header interface {
 	Get(key string) ([]string, bool)
 
 	// Set allows to set value for a proposed case-insensitive key
-	Set(key string, value []string)
+	Set(key string, values ...string)
 
 	// Remove deletes a specific case-insensitive key from Bag
 	Remove(key string)
@@ -20,12 +20,12 @@ type Header interface {
 	// All returns all key-value of bag
 	All() map[string][]string
 
-	// Line shows a specific case-insensitive key as a line
-	// it returns empty if key is not found
-	Line(key string) string
+	// Line shows a specific case-insensitive key as a pair of name-line
+	// it returns empty string for line if key is not found
+	Line(key string) (string, string)
 
 	// Lines returns header as lines
-	Lines() []string
+	Lines() map[string]string
 }
 
 // NewHeader returns an instance of Header
@@ -42,8 +42,8 @@ func (h *FactoryHeader) Get(key string) ([]string, bool) {
 	return value, ok
 }
 
-func (h *FactoryHeader) Set(key string, value []string) {
-	h.items[h.formatKey(key)] = value
+func (h *FactoryHeader) Set(key string, values ...string) {
+	h.items[h.formatKey(key)] = values
 }
 
 func (h *FactoryHeader) Remove(key string) {
@@ -59,23 +59,22 @@ func (h *FactoryHeader) All() map[string][]string {
 	return h.items
 }
 
-func (h *FactoryHeader) Line(key string) string {
+func (h *FactoryHeader) Line(key string) (string, string) {
 	line := ""
 	key = h.formatKey(key)
 	values, ok := h.items[key]
 	if ok == true {
-		line = key + ": " + strings.Join(values, ", ")
+		line = strings.Join(values, ", ")
 	}
 
-	return line
+	return key, line
 }
 
-func (h *FactoryHeader) Lines() []string {
-	lines := make([]string, len(h.items))
-	i := 0
+func (h *FactoryHeader) Lines() map[string]string {
+	lines := make(map[string]string, len(h.items))
 	for key := range h.items {
-		lines[i] = h.Line(key)
-		i++
+		name, line := h.Line(key)
+		lines[name] = line
 	}
 	return lines
 }
