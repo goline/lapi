@@ -1,5 +1,10 @@
 package lapi
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Route acts a route describer
 type Route interface {
 	RouteHooker
@@ -53,5 +58,82 @@ type RouteHooker interface {
 	Hooks() []Hook
 
 	// WithHooks allows to add hooks
-	WithHooks(hooks ...Hook)
+	WithHooks(hooks ...Hook) Route
+}
+
+func NewRoute(method string, version string, uri string, handler Handler) Route {
+	r := &FactoryRoute{
+		method:  method,
+		version: version,
+		uri:     uri,
+		handler: handler,
+	}
+	return r.WithName(genRouteName(r))
+}
+
+type FactoryRoute struct {
+	name    string
+	method  string
+	uri     string
+	version string
+	handler Handler
+	hooks   []Hook
+}
+
+func (r *FactoryRoute) Name() string {
+	return r.name
+}
+
+func (r *FactoryRoute) WithName(name string) Route {
+	r.name = name
+	return r
+}
+
+func (r *FactoryRoute) Method() string {
+	return r.method
+}
+
+func (r *FactoryRoute) WithMethod(method string) Route {
+	r.method = method
+	return r
+}
+
+func (r *FactoryRoute) Uri() string {
+	return r.uri
+}
+
+func (r *FactoryRoute) WithUri(uri string) Route {
+	r.uri = uri
+	return r
+}
+
+func (r *FactoryRoute) Version() string {
+	return r.version
+}
+
+func (r *FactoryRoute) WithVersion(version string) Route {
+	r.version = version
+	return r
+}
+
+func (r *FactoryRoute) Handler() Handler {
+	return r.handler
+}
+
+func (r *FactoryRoute) WithHandler(handler Handler) Route {
+	r.handler = handler
+	return r
+}
+
+func (r *FactoryRoute) Hooks() []Hook {
+	return r.hooks
+}
+
+func (r *FactoryRoute) WithHooks(hooks ...Hook) Route {
+	r.hooks = hooks
+	return r
+}
+
+func genRouteName(r Route) string {
+	return fmt.Sprintf("%v_%v_%v", r.Method(), r.Version(), strings.Replace(r.Uri(), "/", "_", -1))
 }
