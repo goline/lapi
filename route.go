@@ -68,13 +68,13 @@ type RouteHooker interface {
 }
 
 func NewRoute(method string, version string, uri string, handler Handler) Route {
-	r := &FactoryRoute{
-		method:  method,
-		version: version,
-		uri:     uri,
-		handler: handler,
-	}
-	return r.WithName(genRouteName(r))
+	r := &FactoryRoute{}
+	return r.
+		WithMethod(method).
+		WithVersion(version).
+		WithUri(uri).
+		WithHandler(handler).
+		WithName(genRouteName(r))
 }
 
 type FactoryRoute struct {
@@ -101,7 +101,7 @@ func (r *FactoryRoute) Method() string {
 }
 
 func (r *FactoryRoute) WithMethod(method string) Route {
-	r.method = method
+	r.method = strings.ToUpper(method)
 	return r
 }
 

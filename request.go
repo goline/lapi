@@ -119,6 +119,9 @@ func (r *FactoryRequest) Cookie(name string) (*http.Cookie, bool) {
 }
 
 func (r *FactoryRequest) WithCookie(cookie *http.Cookie) Request {
+	if r.cookies == nil {
+		r.cookies = make(map[string]*http.Cookie)
+	}
 	r.cookies[cookie.Name] = cookie
 	return r
 }
@@ -128,7 +131,6 @@ func (r *FactoryRequest) Cookies() map[string]*http.Cookie {
 }
 
 func (r *FactoryRequest) WithCookies(cookies []*http.Cookie) Request {
-	r.cookies = make(map[string]*http.Cookie)
 	for _, cookie := range cookies {
 		r.WithCookie(cookie)
 	}
@@ -160,6 +162,9 @@ func (r *FactoryRequest) parseRequest() {
 }
 
 func (r *FactoryRequest) parseRequestHeader() {
+	if r.header == nil {
+		r.header = NewHeader()
+	}
 	for key := range r.ancestor.Header {
 		r.Header().Set(key, r.ancestor.Header.Get(key))
 	}
