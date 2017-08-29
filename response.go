@@ -31,10 +31,10 @@ type ResponseInformer interface {
 // ResponseDescriber handles content
 type ResponseDescriber interface {
 	// Content gets response's content
-	Content() map[string]interface{}
+	Content() interface{}
 
 	// WithContent sets response's content
-	WithContent(content map[string]interface{}) Response
+	WithContent(content interface{}) Response
 }
 
 // ResponseHeader helps to manage header
@@ -63,10 +63,9 @@ type ResponseSender interface {
 
 func NewResponse(w http.ResponseWriter) Response {
 	return &FactoryResponse{
-		w:       w,
-		status:  http.StatusOK,
-		content: make(map[string]interface{}),
-		header:  NewHeader(),
+		w:      w,
+		status: http.StatusOK,
+		header: NewHeader(),
 	}
 }
 
@@ -74,7 +73,7 @@ type FactoryResponse struct {
 	w       http.ResponseWriter
 	status  int
 	message string
-	content map[string]interface{}
+	content interface{}
 	header  Header
 	cookies []*http.Cookie
 }
@@ -97,11 +96,11 @@ func (r *FactoryResponse) WithMessage(message string) Response {
 	return r
 }
 
-func (r *FactoryResponse) Content() map[string]interface{} {
+func (r *FactoryResponse) Content() interface{} {
 	return r.content
 }
 
-func (r *FactoryResponse) WithContent(content map[string]interface{}) Response {
+func (r *FactoryResponse) WithContent(content interface{}) Response {
 	r.content = content
 	return r
 }
