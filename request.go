@@ -6,11 +6,12 @@ import (
 
 // Request represents for an application's request
 type Request interface {
+	RequestHeader
 	RequestCookies
 	RequestInputer
+	RequestAncestor
 	RequestResolver
 	RequestParameter
-	RequestAncestor
 }
 
 // RequestAncestor keeps original http.Request
@@ -25,6 +26,15 @@ type RequestResolver interface {
 
 	// WithRoute sets request's routes
 	WithRoute(route Route) Request
+}
+
+// RequestHeader manages request's header
+type RequestHeader interface {
+	// Header returns an instance of Header
+	Header() Header
+
+	// WithHeader allows to set Header
+	WithHeader(header Header) Request
 }
 
 // RequestCookies handles request's cookies
@@ -60,16 +70,19 @@ type RequestParameter interface {
 	WithParam(key string, value interface{}) Request
 }
 
-func NewRequest(ancestor *http.Request) Request {
-	return &FactoryRequest{
-		ancestor: ancestor,
+func NewRequest(req *http.Request) Request {
+	r := &FactoryRequest{
+		ancestor: req,
 		cookies:  make(map[string]*http.Cookie),
 		params:   NewBag(),
 	}
+	r.parseRequest()
+	return r
 }
 
 type FactoryRequest struct {
 	ancestor *http.Request
+	header   Header
 	input    interface{}
 	cookies  map[string]*http.Cookie
 	params   Bag
@@ -86,6 +99,15 @@ func (r *FactoryRequest) Route() Route {
 
 func (r *FactoryRequest) WithRoute(route Route) Request {
 	r.route = route
+	return r
+}
+
+func (r *FactoryRequest) Header() Header {
+	return r.header
+}
+
+func (r *FactoryRequest) WithHeader(header Header) Request {
+	r.header = header
 	return r
 }
 
@@ -127,4 +149,14 @@ func (r *FactoryRequest) Param(key string) (value interface{}, ok bool) {
 func (r *FactoryRequest) WithParam(key string, value interface{}) Request {
 	r.params.Set(key, value)
 	return r
+}
+
+func (r *FactoryRequest) parseRequest() {
+	r.parseRequestHeader()
+}
+
+func (r *FactoryRequest) parseRequestHeader() {
+	for key := range r.ancestor.Header {
+		r.Header().Set(key, r.ancestor.Header.Get(key))
+	}
 }
