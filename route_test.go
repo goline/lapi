@@ -30,6 +30,22 @@ func TestFactoryRoute_WithName(t *testing.T) {
 	}
 }
 
+func TestFactoryRoute_Host(t *testing.T) {
+	r := &FactoryRoute{}
+	r.host = "abc.com:8888"
+	if r.Host() != "abc.com:8888" {
+		t.Errorf("Expects route's host is abc.com:8888. Got %v", r.Host())
+	}
+}
+
+func TestFactoryRoute_WithHost(t *testing.T) {
+	r := &FactoryRoute{}
+	r.WithHost("abc.com:8888")
+	if r.host != "abc.com:8888" {
+		t.Errorf("Expects route's host is abc.com:8888. Got %v", r.host)
+	}
+}
+
 func TestFactoryRoute_Method(t *testing.T) {
 	r := &FactoryRoute{}
 	r.method = "PUT"

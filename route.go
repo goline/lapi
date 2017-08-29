@@ -24,6 +24,12 @@ type RouteIdentifier interface {
 
 // RouteDescriber describes route's information
 type RouteDescriber interface {
+	// Host gives HTTP Host
+	Host() string
+
+	// WithHost sets route's host
+	WithHost(host string) Route
+
 	// Method returns HTTP Method string
 	Method() string
 
@@ -73,6 +79,7 @@ func NewRoute(method string, version string, uri string, handler Handler) Route 
 
 type FactoryRoute struct {
 	name    string
+	host    string
 	method  string
 	uri     string
 	version string
@@ -95,6 +102,15 @@ func (r *FactoryRoute) Method() string {
 
 func (r *FactoryRoute) WithMethod(method string) Route {
 	r.method = method
+	return r
+}
+
+func (r *FactoryRoute) Host() string {
+	return r.host
+}
+
+func (r *FactoryRoute) WithHost(host string) Route {
+	r.host = host
 	return r
 }
 

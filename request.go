@@ -1,6 +1,8 @@
 package lapi
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -153,10 +155,34 @@ func (r *FactoryRequest) WithParam(key string, value interface{}) Request {
 
 func (r *FactoryRequest) parseRequest() {
 	r.parseRequestHeader()
+	r.parseRequestBody()
+	r.parseCookies()
 }
 
 func (r *FactoryRequest) parseRequestHeader() {
 	for key := range r.ancestor.Header {
 		r.Header().Set(key, r.ancestor.Header.Get(key))
 	}
+}
+
+func (r *FactoryRequest) parseRequestBody() error {
+	if r.ancestor.Body != nil {
+		body, err := ioutil.ReadAll(r.ancestor.Body)
+		if err != nil {
+			return err
+		}
+
+		var input interface{}
+		err = json.Unmarshal(body, input)
+		if err != nil {
+			return err
+		}
+		r.WithInput(input)
+	}
+
+	return nil
+}
+
+func (r *FactoryRequest) parseCookies() {
+	r.WithCookies(r.ancestor.Cookies())
 }
