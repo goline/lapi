@@ -2,6 +2,7 @@ package lapi
 
 import (
 	"encoding/json"
+	"github.com/goline/lapi/parser"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -79,7 +80,7 @@ func TestFactoryResponse_Header(t *testing.T) {
 	h := NewHeader()
 	h.Set("content-type", "application/json")
 	r.header = h
-	if rh, ok := r.Header().Get("content-type"); ok == false || rh[0] != "application/json" {
+	if rh, ok := r.Header().Get("content-type"); ok == false || rh != "application/json" {
 		t.Errorf("Expects header must be set. Got %v", r.Header())
 	}
 }
@@ -88,7 +89,7 @@ func TestFactoryResponse_WithHeader(t *testing.T) {
 	r := &FactoryResponse{}
 	h := NewHeader()
 	h.Set("content-type", "application/json")
-	if rh, ok := r.WithHeader(h).Header().Get("content-type"); ok == false || rh[0] != "application/json" {
+	if rh, ok := r.WithHeader(h).Header().Get("content-type"); ok == false || rh != "application/json" {
 		t.Errorf("Expects header must be set. Got %v", r.Header())
 	}
 }
@@ -119,7 +120,7 @@ func TestFactoryResponse_WithCookies(t *testing.T) {
 
 func TestFactoryResponse_Send(t *testing.T) {
 	h := func(w http.ResponseWriter, r *http.Request) {
-		rs := &FactoryResponse{w: w}
+		rs := &FactoryResponse{w: w, ParserManager: NewParserManager()}
 		rs.WithStatus(http.StatusInternalServerError)
 		rs.WithHeader(NewHeader()).Header().Set("content-type", "application/json")
 		rs.Header().Set("x-custom-flag", "1234")
@@ -131,6 +132,7 @@ func TestFactoryResponse_Send(t *testing.T) {
 			&http.Cookie{Name: "my_c1", Value: "my_val1"},
 			&http.Cookie{Name: "my_c2", Value: "my_val2"},
 		})
+		rs.WithParser(&parser.JsonParser{})
 		rs.Send()
 	}
 	rq := httptest.NewRequest("GET", "/test", nil)

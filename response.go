@@ -1,7 +1,8 @@
 package lapi
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -12,6 +13,7 @@ type Response interface {
 	ResponseCookies
 	ResponseHeader
 	ResponseSender
+	ParserManager
 }
 
 type ResponseInformer interface {
@@ -63,9 +65,10 @@ type ResponseSender interface {
 
 func NewResponse(w http.ResponseWriter) Response {
 	return &FactoryResponse{
-		w:      w,
-		status: http.StatusOK,
-		header: NewHeader(),
+		w:             w,
+		status:        http.StatusOK,
+		header:        NewHeader(),
+		ParserManager: NewParserManager(),
 	}
 }
 
@@ -76,6 +79,7 @@ type FactoryResponse struct {
 	content interface{}
 	header  Header
 	cookies []*http.Cookie
+	ParserManager
 }
 
 func (r *FactoryResponse) Status() int {
@@ -128,19 +132,25 @@ func (r *FactoryResponse) Send() error {
 		http.SetCookie(r.w, cookie)
 	}
 
-	for k, v := range r.header.Lines() {
+	for k, v := range r.header.All() {
 		r.w.Header().Set(k, v)
+	}
+
+	ct, _ := r.header.Get("Content-Type")
+	p, ok := r.Parser(ct)
+	if ok == false {
+		return errors.New(fmt.Sprintf("Unable to find an appropriate parser for %v", ct))
+	}
+
+	b, err := p.Encode(r.content)
+	if err != nil {
+		return err
 	}
 
 	if r.message != "" {
 		http.Error(r.w, r.message, r.status)
 	} else {
 		r.w.WriteHeader(r.status)
-	}
-
-	b, err := json.Marshal(r.content)
-	if err != nil {
-		return err
 	}
 	r.w.Write(b)
 

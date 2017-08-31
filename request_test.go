@@ -57,7 +57,7 @@ func TestFactoryRequest_Header(t *testing.T) {
 	r := &FactoryRequest{}
 	r.ancestor = a
 	r.parseRequest()
-	if v, ok := r.Header().Get("Content-Type"); ok == false || v[0] != "application/json" {
+	if v, ok := r.Header().Get("Content-Type"); ok == false || v != "application/json" {
 		t.Errorf("Expects header content-type equals application/json")
 	}
 }
@@ -67,7 +67,7 @@ func TestFactoryRequest_WithHeader(t *testing.T) {
 	h.Set("content-Type", "application/json")
 	r := &FactoryRequest{}
 	r.WithHeader(h)
-	if v, ok := r.Header().Get("Content-Type"); ok == false || v[0] != "application/json" {
+	if v, ok := r.Header().Get("Content-Type"); ok == false || v != "application/json" {
 		t.Errorf("Expects header content-type equals application/json")
 	}
 }
