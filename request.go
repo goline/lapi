@@ -78,7 +78,9 @@ func NewRequest(req *http.Request) Request {
 		cookies:  make(map[string]*http.Cookie),
 		params:   NewBag(),
 	}
-	r.parseRequest()
+	if req != nil {
+		r.parseRequest()
+	}
 	return r
 }
 

@@ -23,7 +23,10 @@ type SystemError interface {
 // HttpError is an Error with HTTP status
 type HttpError interface {
 	ErrorStatus
-	Error
+	ErrorCoder
+	ErrorMessager
+	ErrorTracer
+	error
 }
 
 // StackError contains multiple Errors
@@ -80,16 +83,18 @@ func (e *FactoryError) Trace() error {
 }
 
 func (e *FactoryError) Error() string {
-	return fmt.Sprintf("[%v] %v", e.code, e.message)
+	return getErrorString(e)
 }
 
-func NewHttpError(status int, error Error) HttpError {
-	return &FactoryHttpError{status, error}
+func NewHttpError(status int, code string, message string, err error) HttpError {
+	return &FactoryHttpError{status, code, message, err}
 }
 
 type FactoryHttpError struct {
-	status int
-	error  Error
+	status  int
+	code    string
+	message string
+	err     error
 }
 
 func (e *FactoryHttpError) Status() int {
@@ -97,22 +102,22 @@ func (e *FactoryHttpError) Status() int {
 }
 
 func (e *FactoryHttpError) Code() string {
-	return e.Code()
+	return e.code
 }
 
 func (e *FactoryHttpError) Message() string {
-	return e.Message()
+	return e.message
 }
 
 func (e *FactoryHttpError) Trace() error {
-	return e.Trace()
+	return e.err
 }
 
 func (e *FactoryHttpError) Error() string {
-	return e.Error()
+	return getErrorString(e)
 }
 
-func NewStackError(status int, errors ...Error) StackError {
+func NewStackError(status int, errors []Error) StackError {
 	return &FactoryStackError{status, errors}
 }
 
@@ -159,5 +164,19 @@ func (e *FactorySystemError) Message() string {
 }
 
 func (e *FactorySystemError) Error() string {
-	return fmt.Sprintf("[%v] %v", e.code, e.message)
+	return getErrorString(e)
+}
+
+func getErrorString(err interface{}) string {
+	var code, message string
+	if e, ok := err.(ErrorCoder); ok == true {
+		code = e.Code()
+	} else if e, ok := err.(ErrorNo); ok == true {
+		code = fmt.Sprintf("%v", e.Code())
+	}
+	if e, ok := err.(ErrorMessager); ok == true {
+		message = e.Message()
+	}
+
+	return fmt.Sprintf("[%v] %v", code, message)
 }
