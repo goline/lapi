@@ -99,7 +99,6 @@ func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (c
 	default:
 		return nil, NewSystemError(ResolveErrorInvalidConcrete, fmt.Sprintf("Type %v is not supported", value.Kind()))
 	}
-	return nil, nil
 }
 
 func (c *FactoryContainer) Inject(target interface{}) SystemError {

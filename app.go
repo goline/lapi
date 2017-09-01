@@ -128,6 +128,7 @@ func (a *FactoryApp) Run() {
 func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.request = NewRequest(r)
 	a.response = NewResponse(w)
+	defer a.forceSendResponse()
 
 	if a.router == nil {
 		a.handleError(NewSystemError(ERROR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
@@ -156,7 +157,9 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+}
 
+func (a *FactoryApp) forceSendResponse() {
 	if a.response.IsSent() == false {
 		a.response.Send()
 	}
@@ -167,10 +170,12 @@ func (a *FactoryApp) handleError(err error) {
 		loader.TearDown(a, err)
 	}
 
-	if a.response.IsSent() == true {
-		return
+	if a.response.IsSent() == false {
+		a.modifyResponseOnError(err)
 	}
+}
 
+func (a *FactoryApp) modifyResponseOnError(err error) {
 	if e, ok := err.(ErrorStatus); ok == true {
 		a.response.WithStatus(e.Status())
 	} else {
@@ -185,7 +190,7 @@ func (a *FactoryApp) handleError(err error) {
 	case StackError:
 		es = e.Errors()
 	default:
-		es[0] = NewError("", "INVALID_ERROR", errors.New("Error's type is not supported."))
+		es[0] = NewError("", "ERROR_HANDLE_INVALID_ERROR", errors.New("Error's type is not supported."))
 	}
 
 	ei := make([]errorItemResponse, len(es))
@@ -194,8 +199,6 @@ func (a *FactoryApp) handleError(err error) {
 	}
 	er := &errorStackResponse{ei}
 	a.response.WithContent(er)
-
-	a.response.Send()
 }
 
 type errorStackResponse struct {
