@@ -1,19 +1,209 @@
 package lapi
 
+import (
+	"errors"
+	"fmt"
+	"net/http"
+)
+
 // App is a central application
 type App interface {
-	// Container returns an instance of Container
-	Container() Container
+	ContainerAware
+	AppLoader
+	AppRunner
+	AppConfigger
+	AppConnector
+	AppRouter
+}
 
-	// Register allows to register application's loader
-	Register(loader Loader) App
+// AppLoader handles application's loader
+type AppLoader interface {
+	// WithLoader allows to register application's loader
+	WithLoader(loader Loader) App
+}
 
-	// Request returns application's request
+// AppConfigger handles config
+type AppConfigger interface {
+	// Config returns instance of config
+	Config() Config
+
+	// WithConfig allows to set config
+	WithConfig(config Config) App
+}
+
+type AppConnector interface {
+	// Request returns an instance of Request
 	Request() Request
 
-	// Response returns application's response
+	// Response returns an instance of Response
 	Response() Response
+}
 
+// AppRouter handles router
+type AppRouter interface {
+	// Router returns an instance of Router
+	Router() Router
+
+	// WithRouter sets router
+	WithRouter(router Router) App
+}
+
+// AppRunner runs application
+type AppRunner interface {
 	// Run brings application up
-	Run(config Config, container Container)
+	// Any errors should manage inside this method
+	Run()
+}
+
+func NewApp() App {
+	return &FactoryApp{
+		config:    NewConfig(),
+		container: NewContainer(),
+		loaders:   make([]Loader, 0),
+	}
+}
+
+type FactoryApp struct {
+	config    Config
+	container Container
+	loaders   []Loader
+	request   Request
+	response  Response
+	router    Router
+}
+
+func (a *FactoryApp) Container() Container {
+	return a.container
+}
+
+func (a *FactoryApp) WithContainer(container Container) ContainerAware {
+	a.container = container
+	return a
+}
+
+func (a *FactoryApp) WithLoader(loader Loader) App {
+	a.loaders = append(a.loaders, loader)
+	return a
+}
+
+func (a *FactoryApp) Config() Config {
+	return a.config
+}
+
+func (a *FactoryApp) WithConfig(config Config) App {
+	a.config = config
+	return a
+}
+
+func (a *FactoryApp) Request() Request {
+	return a.request
+}
+
+func (a *FactoryApp) Response() Response {
+	return a.response
+}
+
+func (a *FactoryApp) Router() Router {
+	return a.router
+}
+
+func (a *FactoryApp) WithRouter(router Router) App {
+	a.router = router
+	return a
+}
+
+func (a *FactoryApp) Run() {
+	for _, loader := range a.loaders {
+		loader.SetUp(a)
+	}
+
+	http.Handle("/", a)
+	if c, ok := a.config.(ServerConfig); ok == true {
+		http.ListenAndServe(c.Address(), nil)
+	} else {
+		panic(NewSystemError(ERROR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing")))
+	}
+}
+
+func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	a.request = NewRequest(r)
+	a.response = NewResponse(w)
+
+	if a.router == nil {
+		a.handleError(NewSystemError(ERROR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
+	}
+
+	err := a.router.Route(a.request)
+	if err != nil {
+		a.handleError(err)
+		return
+	}
+
+	for _, hook := range a.request.Route().Hooks() {
+		isContinue := hook.SetUp(a.request, a.response)
+		if isContinue == false {
+			break
+		}
+	}
+	if a.response.IsSent() == true {
+		return
+	}
+
+	result, err := a.request.Route().Handler().Handle(a.request, a.response)
+	for _, hook := range a.request.Route().Hooks() {
+		isContinue := hook.TearDown(a.request, a.response, result, err)
+		if isContinue == false {
+			break
+		}
+	}
+
+	if a.response.IsSent() == false {
+		a.response.Send()
+	}
+}
+
+func (a *FactoryApp) handleError(err error) {
+	for _, loader := range a.loaders {
+		loader.TearDown(a, err)
+	}
+
+	if a.response.IsSent() == true {
+		return
+	}
+
+	if e, ok := err.(ErrorStatus); ok == true {
+		a.response.WithStatus(e.Status())
+	} else {
+		a.response.WithStatus(http.StatusInternalServerError)
+	}
+
+	var es []Error
+	if e, ok := err.(Error); ok == true {
+		es = make([]Error, 1)
+		es[0] = e
+	} else if e, ok := err.(StackError); ok == true {
+		es = e.Errors()
+	}
+
+	if len(es) > 0 {
+		ei := make([]errorItemResponse, len(es))
+		for i, e := range es {
+			ei[i] = errorItemResponse{e.Code(), e.Message()}
+		}
+		er := &errorStackResponse{ei}
+		a.response.WithContent(er)
+	} else {
+		panic(errors.New("Expects to catch at least 1 error. Got 0"))
+	}
+
+	a.response.Send()
+}
+
+type errorStackResponse struct {
+	Errors []errorItemResponse `json:"errors"`
+}
+
+type errorItemResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }

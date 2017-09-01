@@ -41,6 +41,15 @@ type Injector interface {
 	Inject(target interface{}) SystemError
 }
 
+// ContainerAware handles a container
+type ContainerAware interface {
+	// Container returns an instance of Container
+	Container() Container
+
+	// WithContainer allows to set container
+	WithContainer(container Container) ContainerAware
+}
+
 func NewContainer() Container {
 	return &FactoryContainer{make(map[reflect.Type]reflect.Value)}
 }

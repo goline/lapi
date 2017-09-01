@@ -1,7 +1,5 @@
 package lapi
 
-import "net/http"
-
 // Router is an application's router
 type Router interface {
 	RouteRestfuller
@@ -53,10 +51,10 @@ type RouteGrouper interface {
 // RouteMatcher matches request to route
 type RouteMatcher interface {
 	// Route performs routing
-	Route(r http.Request) Request
+	Route(r Request) error
 
 	// Match tests and returns matched route for proposed request
-	Match(r http.Request) Route
+	Match(r Request) Route
 }
 
 // RouteManager manages inner routes

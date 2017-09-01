@@ -61,6 +61,10 @@ type ResponseCookies interface {
 type ResponseSender interface {
 	// Send flushes response out
 	Send() error
+
+	// IsSent returns true if response has already been sent
+	// false if otherwise
+	IsSent() bool
 }
 
 func NewResponse(w http.ResponseWriter) Response {
@@ -68,6 +72,7 @@ func NewResponse(w http.ResponseWriter) Response {
 		w:             w,
 		status:        http.StatusOK,
 		header:        NewHeader(),
+		isSent:        false,
 		ParserManager: NewParserManager(),
 	}
 }
@@ -79,6 +84,7 @@ type FactoryResponse struct {
 	content interface{}
 	header  Header
 	cookies []*http.Cookie
+	isSent  bool
 	ParserManager
 }
 
@@ -154,5 +160,10 @@ func (r *FactoryResponse) Send() error {
 	}
 	r.w.Write(b)
 
+	r.isSent = true
 	return nil
+}
+
+func (r *FactoryResponse) IsSent() bool {
+	return r.isSent
 }

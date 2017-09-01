@@ -1,0 +1,6 @@
+package lapi
+
+const (
+	ERROR_ROUTER_NOT_DEFINED    = 1
+	ERROR_SERVER_CONFIG_MISSING = 2
+)
