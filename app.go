@@ -150,7 +150,9 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := a.request.Route().Handler().Handle(a.request, a.response)
+	handler := a.request.Route().Handler()
+	a.container.Inject(handler)
+	result, err := handler.Handle(a.request, a.response)
 	for _, hook := range a.request.Route().Hooks() {
 		isContinue := hook.TearDown(a.request, a.response, result, err)
 		if isContinue == false {
