@@ -152,6 +152,9 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	handler := a.request.Route().Handler()
 	a.container.Inject(handler)
+	if h, ok := handler.(ContainerAware); ok == true {
+		h.WithContainer(a.container)
+	}
 	result, err := handler.Handle(a.request, a.response)
 	for _, hook := range a.request.Route().Hooks() {
 		isContinue := hook.TearDown(a.request, a.response, result, err)
