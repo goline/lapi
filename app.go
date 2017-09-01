@@ -178,23 +178,22 @@ func (a *FactoryApp) handleError(err error) {
 	}
 
 	var es []Error
-	if e, ok := err.(Error); ok == true {
+	switch e := err.(type) {
+	case Error:
 		es = make([]Error, 1)
 		es[0] = e
-	} else if e, ok := err.(StackError); ok == true {
+	case StackError:
 		es = e.Errors()
+	default:
+		es[0] = NewError("", "INVALID_ERROR", errors.New("Error's type is not supported."))
 	}
 
-	if len(es) > 0 {
-		ei := make([]errorItemResponse, len(es))
-		for i, e := range es {
-			ei[i] = errorItemResponse{e.Code(), e.Message()}
-		}
-		er := &errorStackResponse{ei}
-		a.response.WithContent(er)
-	} else {
-		panic(errors.New("Expects to catch at least 1 error. Got 0"))
+	ei := make([]errorItemResponse, len(es))
+	for i, e := range es {
+		ei[i] = errorItemResponse{e.Code(), e.Message()}
 	}
+	er := &errorStackResponse{ei}
+	a.response.WithContent(er)
 
 	a.response.Send()
 }
