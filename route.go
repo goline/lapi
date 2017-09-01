@@ -151,5 +151,5 @@ func (r *FactoryRoute) WithHooks(hooks ...Hook) Route {
 }
 
 func genRouteName(r Route) string {
-	return fmt.Sprintf("%v_%v_%v", r.Method(), r.Version(), strings.Replace(r.Uri(), "/", "_", -1))
+	return fmt.Sprintf("%s_%s_%s", r.Method(), r.Version(), strings.Replace(r.Uri(), "/", "_", -1))
 }

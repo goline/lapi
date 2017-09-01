@@ -5,7 +5,7 @@ var chalk = require('chalk');
 
 var cmdTest = 'go test';
 var cmdVet = 'go tool vet */*.go';
-var files = '*/*.go';
+var files = ['**/*.go'];
 
 var logger = {
     error: function (err, trace) {
