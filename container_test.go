@@ -2,6 +2,7 @@ package lapi
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 )
 
@@ -47,6 +48,27 @@ func TestFactoryContainer_Bind_ErrorNotSupportAbstractType(t *testing.T) {
 		if err.Code() != BindErrorInvalidConcrete {
 			t.Errorf("Expects BindErrorInvalidConcrete code. Got %v", err.Code())
 		}
+	}
+}
+
+func TestFactoryContainer_Resolve_ErrorAbstractNotAnInterface(t *testing.T) {
+	c := &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	_, err := c.Resolve(&FactoryBag{})
+	if err == nil {
+		t.Errorf("Expects err is not nil")
+	}
+}
+
+func TestFactoryContainer_Resolve_ErrorInvalidConcreteType(t *testing.T) {
+	c := &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	c.Bind((*Bag)(nil), NewBag())
+	for k := range c.items {
+		c.items[k] = reflect.ValueOf("a_string")
+		break
+	}
+	_, err := c.Resolve((*Bag)(nil))
+	if err == nil {
+		t.Errorf("Expects err is not nil")
 	}
 }
 
@@ -180,8 +202,10 @@ func TestFactoryContainer_Inject_Ok(t *testing.T) {
 }
 
 type InjectRecursiveOk struct {
-	Err Error       `inject:"*"`
-	Foo InjectFooer `inject:"*"`
+	Err                          Error       `inject:"*"`
+	Foo                          InjectFooer `inject:"*"`
+	NotInjectableNonInterface    string      `inject:"*"`
+	notInjectablePrivateProperty Error       `inject:"*"`
 }
 type InjectFooer interface {
 	Foo() string
@@ -228,5 +252,22 @@ func TestFactoryContainer_Inject_Recursive_Ok(t *testing.T) {
 	}
 	if b, ok := in.Foo.(*InjectFoo); ok != true || b.Baz.Baz() != "Baz.." {
 		t.Errorf("Expects Foo is an instance of InjectFoo and Foo.Baz.Baz() is Baz... Got %v", b.Baz.Baz())
+	}
+}
+
+func TestFactoryContainer_Private_InstanceOf_AbstractNotAnInterface(t *testing.T) {
+	c := &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	v := c.instanceOf(reflect.TypeOf("a_string"), reflect.TypeOf((*Bag)(nil)))
+	if v != false {
+		t.Errorf("Expects v is false. Got %v", v)
+	}
+}
+
+func TestFactoryContainer_Private_InstanceOf_ConcreteTypeNotSupport(t *testing.T) {
+	c := &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	i, _ := c.interfaceOf((*Bag)(nil))
+	v := c.instanceOf(i, reflect.TypeOf("a_string"))
+	if v != false {
+		t.Errorf("Expects v is false. Got %v", v)
 	}
 }

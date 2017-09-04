@@ -1,9 +1,11 @@
 package lapi
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 // Request represents for an application's request
@@ -13,7 +15,9 @@ type Request interface {
 	RequestInputer
 	RequestAncestor
 	RequestResolver
+	RequestInformer
 	RequestParameter
+	ParserManager
 }
 
 // RequestAncestor keeps original http.Request
@@ -28,6 +32,39 @@ type RequestResolver interface {
 
 	// WithRoute sets request's routes
 	WithRoute(route Route) Request
+}
+
+// RequestInformer contains request information
+type RequestInformer interface {
+	// Method returns request's method
+	Method() string
+
+	// WithMethod sets request's method
+	WithMethod(method string) Request
+
+	// Scheme returns request's scheme, such as http, https, ftp.
+	Scheme() string
+
+	// WithScheme sets request's scheme
+	WithScheme(scheme string) Request
+
+	// Host return request's host
+	Host() string
+
+	// WithHost sets request's host
+	WithHost(host string) Request
+
+	// Port return request's port
+	Port() int
+
+	// WithPort sets request's port
+	WithPort(port int) Request
+
+	// Uri returns request's uri
+	Uri() string
+
+	// WithUri sets request's uri
+	WithUri(uri string) Request
 }
 
 // RequestHeader manages request's header
@@ -72,16 +109,19 @@ type RequestParameter interface {
 	WithParam(key string, value interface{}) Request
 }
 
-func NewRequest(req *http.Request) Request {
+func NewRequest(req *http.Request) (Request, error) {
 	r := &FactoryRequest{
-		ancestor: req,
-		cookies:  make(map[string]*http.Cookie),
-		params:   NewBag(),
+		ancestor:      req,
+		cookies:       make(map[string]*http.Cookie),
+		params:        NewBag(),
+		ParserManager: NewParserManager(),
 	}
 	if req != nil {
-		r.parseRequest()
+		if err := r.parseRequest(); err != nil {
+			return nil, err
+		}
 	}
-	return r
+	return r, nil
 }
 
 type FactoryRequest struct {
@@ -91,6 +131,12 @@ type FactoryRequest struct {
 	cookies  map[string]*http.Cookie
 	params   Bag
 	route    Route
+	method   string
+	scheme   string
+	host     string
+	port     int
+	uri      string
+	ParserManager
 }
 
 func (r *FactoryRequest) Ancestor() *http.Request {
@@ -103,6 +149,51 @@ func (r *FactoryRequest) Route() Route {
 
 func (r *FactoryRequest) WithRoute(route Route) Request {
 	r.route = route
+	return r
+}
+
+func (r *FactoryRequest) Method() string {
+	return r.method
+}
+
+func (r *FactoryRequest) WithMethod(method string) Request {
+	r.method = method
+	return r
+}
+
+func (r *FactoryRequest) Scheme() string {
+	return r.scheme
+}
+
+func (r *FactoryRequest) WithScheme(scheme string) Request {
+	r.scheme = scheme
+	return r
+}
+
+func (r *FactoryRequest) Host() string {
+	return r.host
+}
+
+func (r *FactoryRequest) WithHost(host string) Request {
+	r.host = host
+	return r
+}
+
+func (r *FactoryRequest) Port() int {
+	return r.port
+}
+
+func (r *FactoryRequest) WithPort(port int) Request {
+	r.port = port
+	return r
+}
+
+func (r *FactoryRequest) Uri() string {
+	return r.uri
+}
+
+func (r *FactoryRequest) WithUri(uri string) Request {
+	r.uri = uri
 	return r
 }
 
@@ -157,39 +248,90 @@ func (r *FactoryRequest) WithParam(key string, value interface{}) Request {
 	return r
 }
 
-func (r *FactoryRequest) parseRequest() {
-	r.parseRequestHeader()
-	r.parseRequestBody()
-	r.parseCookies()
+func (r *FactoryRequest) parseRequest() error {
+	var err error
+	err = r.parseRequestAddress()
+	if err != nil {
+		return err
+	}
+
+	err = r.parseRequestHeader()
+	if err != nil {
+		return err
+	}
+
+	err = r.parseRequestBody()
+	if err != nil {
+		return err
+	}
+
+	err = r.parseCookies()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (r *FactoryRequest) parseRequestHeader() {
+func (r *FactoryRequest) parseRequestAddress() error {
+	r.WithMethod(r.ancestor.Method)
+	r.WithHost(r.ancestor.URL.Hostname())
+	if p, _ := strconv.Atoi(r.ancestor.URL.Port()); p > 0 {
+		r.WithPort(p)
+		r.WithScheme(r.ancestor.URL.Scheme)
+	} else {
+		r.WithPort(PORT_HTTP)
+		r.WithScheme(SCHEME_HTTP)
+	}
+	r.WithUri(r.ancestor.URL.Path)
+	q := r.ancestor.URL.Query()
+	if len(q) > 0 {
+		for k, v := range q {
+			r.WithParam(k, v)
+		}
+	}
+	return nil
+}
+
+func (r *FactoryRequest) parseRequestHeader() error {
 	if r.header == nil {
 		r.header = NewHeader()
 	}
 	for key := range r.ancestor.Header {
 		r.Header().Set(key, r.ancestor.Header.Get(key))
 	}
+	return nil
 }
 
 func (r *FactoryRequest) parseRequestBody() error {
-	if r.ancestor.Body != nil {
-		body, err := ioutil.ReadAll(r.ancestor.Body)
-		if err != nil {
-			return err
-		}
-
-		var input interface{}
-		err = json.Unmarshal(body, input)
-		if err != nil {
-			return err
-		}
-		r.WithInput(input)
+	if r.ancestor.Body == nil {
+		return nil
 	}
+
+	body, err := ioutil.ReadAll(r.ancestor.Body)
+	if err != nil {
+		return err
+	}
+
+	var input interface{}
+	ct, ok := r.header.Get("Content-Type")
+	if ok == false {
+		ct = CONTENT_TYPE_DEFAULT
+	}
+	p, ok := r.Parser(ct)
+	if ok == false {
+		return errors.New(fmt.Sprintf("Unable to find an appropriate parser for %s", ct))
+	}
+	err = p.Decode(body, input)
+	if err != nil {
+		return err
+	}
+	r.WithInput(input)
 
 	return nil
 }
 
-func (r *FactoryRequest) parseCookies() {
+func (r *FactoryRequest) parseCookies() error {
 	r.WithCookies(r.ancestor.Cookies())
+	return nil
 }

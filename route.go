@@ -2,6 +2,7 @@ package lapi
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -9,6 +10,7 @@ import (
 type Route interface {
 	RouteHooker
 	RouteHandler
+	RouteMatcher
 	RouteDescriber
 	RouteIdentifier
 }
@@ -41,12 +43,6 @@ type RouteDescriber interface {
 
 	// WithUri sets route's uri
 	WithUri(uri string) Route
-
-	// Version returns API version
-	Version() string
-
-	// WithVersion sets route's version
-	WithVersion(version string) Route
 }
 
 // RouteHandler manages route's handler
@@ -58,6 +54,12 @@ type RouteHandler interface {
 	WithHandler(handler Handler) Route
 }
 
+// RouteMatcher matches request
+type RouteMatcher interface {
+	// Match tests and returns matched route for proposed request
+	Match(request Request) (Route, bool)
+}
+
 // RouteHooker manages route's hooks
 type RouteHooker interface {
 	// Hooks returns all hooks for route
@@ -67,14 +69,16 @@ type RouteHooker interface {
 	WithHooks(hooks ...Hook) Route
 }
 
-func NewRoute(method string, version string, uri string, handler Handler) Route {
-	r := &FactoryRoute{}
+func NewRoute(method string, uri string, handler Handler) Route {
+	r := &FactoryRoute{
+		pvHost: &patternVerifier{},
+		pvUri:  &patternVerifier{},
+	}
 	return r.
 		WithMethod(method).
-		WithVersion(version).
 		WithUri(uri).
 		WithHandler(handler).
-		WithName(genRouteName(r))
+		WithName(r.genRouteName())
 }
 
 type FactoryRoute struct {
@@ -82,9 +86,16 @@ type FactoryRoute struct {
 	host    string
 	method  string
 	uri     string
-	version string
 	handler Handler
 	hooks   []Hook
+	pvHost  *patternVerifier
+	pvUri   *patternVerifier
+}
+
+type patternVerifier struct {
+	pattern string
+	keys    []string
+	reg     *regexp.Regexp
 }
 
 func (r *FactoryRoute) Name() string {
@@ -110,7 +121,11 @@ func (r *FactoryRoute) Host() string {
 }
 
 func (r *FactoryRoute) WithHost(host string) Route {
+	var err error
 	r.host = host
+	r.pvHost.pattern, r.pvHost.keys = r.extractKeyPattern(host)
+	r.pvHost.reg, err = regexp.Compile(r.pvHost.pattern)
+	PanicOnError(err)
 	return r
 }
 
@@ -119,16 +134,11 @@ func (r *FactoryRoute) Uri() string {
 }
 
 func (r *FactoryRoute) WithUri(uri string) Route {
+	var err error
 	r.uri = uri
-	return r
-}
-
-func (r *FactoryRoute) Version() string {
-	return r.version
-}
-
-func (r *FactoryRoute) WithVersion(version string) Route {
-	r.version = version
+	r.pvUri.pattern, r.pvUri.keys = r.extractKeyPattern(uri)
+	r.pvUri.reg, err = regexp.Compile(r.pvUri.pattern)
+	PanicOnError(err)
 	return r
 }
 
@@ -150,6 +160,70 @@ func (r *FactoryRoute) WithHooks(hooks ...Hook) Route {
 	return r
 }
 
-func genRouteName(r Route) string {
-	return fmt.Sprintf("%s_%s_%s", r.Method(), r.Version(), strings.Replace(r.Uri(), "/", "_", -1))
+func (r *FactoryRoute) Match(request Request) (Route, bool) {
+	method := request.Method()
+	host := request.Host()
+	uri := request.Uri()
+	if !r.matchMethod(method) || !r.matchHost(host) || !r.matchUri(uri) {
+		return nil, false
+	}
+
+	r.modifyRequestOnMatch(request, r.pvHost, host)
+	r.modifyRequestOnMatch(request, r.pvUri, uri)
+	return r, true
+}
+
+func (r *FactoryRoute) genRouteName() string {
+	return fmt.Sprintf("%s_%s", r.Method(), strings.Replace(r.Uri(), "/", "_", -1))
+}
+
+func (r *FactoryRoute) extractKeyPattern(pattern string) (string, []string) {
+	p := `(\{(\w+):([^\}]+)\})`
+	re, err := regexp.Compile(p)
+	PanicOnError(err)
+	if !re.MatchString(pattern) {
+		return pattern, make([]string, 0)
+	}
+	v := re.FindAllStringSubmatch(pattern, -1)
+	keys := make([]string, len(v))
+	for i, m := range v {
+		keys[i] = m[2]
+		pattern = strings.Replace(pattern, m[1], m[3], 1)
+	}
+	return pattern, keys
+}
+
+func (r *FactoryRoute) matchMethod(method string) bool {
+	if r.method == "" {
+		return true
+	}
+
+	return r.method == method
+}
+
+func (r *FactoryRoute) matchHost(host string) bool {
+	if r.host == "" {
+		return true
+	}
+
+	return r.pvHost.reg.MatchString(host)
+}
+
+func (r *FactoryRoute) matchUri(uri string) bool {
+	if r.uri == "" && uri != "" {
+		return false
+	}
+
+	return r.pvUri.reg.MatchString(uri)
+}
+
+func (r *FactoryRoute) modifyRequestOnMatch(request Request, pv *patternVerifier, s string) {
+	if len(pv.keys) == 0 {
+		return
+	}
+
+	m := pv.reg.FindStringSubmatch(s)
+	for i, key := range pv.keys {
+		request.WithParam(key, m[i+1])
+	}
 }

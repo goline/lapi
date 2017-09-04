@@ -1,7 +1,6 @@
 package lapi
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 )
@@ -12,7 +11,6 @@ type App interface {
 	AppLoader
 	AppRunner
 	AppConfigger
-	AppConnector
 	AppRouter
 }
 
@@ -31,14 +29,6 @@ type AppConfigger interface {
 	WithConfig(config Config) App
 }
 
-type AppConnector interface {
-	// Request returns an instance of Request
-	Request() Request
-
-	// Response returns an instance of Response
-	Response() Response
-}
-
 // AppRouter handles router
 type AppRouter interface {
 	// Router returns an instance of Router
@@ -46,6 +36,12 @@ type AppRouter interface {
 
 	// WithRouter sets router
 	WithRouter(router Router) App
+}
+
+// AppErrorHandler manages error handler
+type AppErrorHandler interface {
+	// WithErrorHandler sets error handler
+	WithErrorHandler(handler ErrorHandler) App
 }
 
 // AppRunner runs application
@@ -64,12 +60,13 @@ func NewApp() App {
 }
 
 type FactoryApp struct {
-	config    Config
-	container Container
-	loaders   []Loader
-	request   Request
-	response  Response
-	router    Router
+	config       Config
+	container    Container
+	loaders      []Loader
+	request      Request
+	response     Response
+	router       Router
+	errorHandler ErrorHandler
 }
 
 func (a *FactoryApp) Container() Container {
@@ -112,6 +109,11 @@ func (a *FactoryApp) WithRouter(router Router) App {
 	return a
 }
 
+func (a *FactoryApp) WithErrorHandler(handler ErrorHandler) App {
+	a.errorHandler = handler
+	return a
+}
+
 func (a *FactoryApp) Run() {
 	for _, loader := range a.loaders {
 		loader.SetUp(a)
@@ -126,91 +128,77 @@ func (a *FactoryApp) Run() {
 }
 
 func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	a.request = NewRequest(r)
-	a.response = NewResponse(w)
-	defer a.forceSendResponse()
-
-	if a.router == nil {
-		a.handleError(NewSystemError(ERROR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
-	}
-
-	err := a.router.Route(a.request)
+	request, err := NewRequest(r)
 	if err != nil {
-		a.handleError(err)
+		a.sendBadRequestResponse(w)
 		return
 	}
 
-	for _, hook := range a.request.Route().Hooks() {
-		isContinue := hook.SetUp(a.request, a.response)
+	response, err := NewResponse(w)
+	if err != nil {
+		a.sendBadRequestResponse(w)
+		return
+	}
+
+	connection := NewConnection(request, response)
+	defer a.forceSendResponse(connection)
+
+	if a.router == nil {
+		a.handleError(connection, NewSystemError(ERROR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
+	}
+
+	err = a.router.Route(request)
+	if err != nil {
+		a.handleError(connection, err)
+		return
+	}
+
+	for _, hook := range request.Route().Hooks() {
+		isContinue := hook.SetUp(connection)
 		if isContinue == false {
 			break
 		}
 	}
-	if a.response.IsSent() == true {
+	if response.IsSent() == true {
 		return
 	}
 
-	handler := a.request.Route().Handler()
+	handler := request.Route().Handler()
 	a.container.Inject(handler)
 	if h, ok := handler.(ContainerAware); ok == true {
 		h.WithContainer(a.container)
 	}
-	result, err := handler.Handle(a.request, a.response)
-	for _, hook := range a.request.Route().Hooks() {
-		isContinue := hook.TearDown(a.request, a.response, result, err)
+	result, err := handler.Handle(connection)
+	for _, hook := range request.Route().Hooks() {
+		isContinue := hook.TearDown(connection, result, err)
 		if isContinue == false {
 			break
 		}
 	}
 }
 
-func (a *FactoryApp) forceSendResponse() {
-	if a.response.IsSent() == false {
-		a.response.Send()
+func (a *FactoryApp) forceSendResponse(connection Connection) {
+	if connection.Response().IsSent() == false {
+		connection.Response().Send()
 	}
 }
 
-func (a *FactoryApp) handleError(err error) {
+func (a *FactoryApp) sendBadRequestResponse(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusBadRequest)
+}
+
+func (a *FactoryApp) handleError(connection Connection, err error) {
 	for _, loader := range a.loaders {
 		loader.TearDown(a, err)
 	}
 
-	if a.response.IsSent() == false {
-		a.modifyResponseOnError(err)
-	}
-}
-
-func (a *FactoryApp) modifyResponseOnError(err error) {
-	if e, ok := err.(ErrorStatus); ok == true {
-		a.response.WithStatus(e.Status())
-	} else {
-		a.response.WithStatus(http.StatusInternalServerError)
+	if connection.Response().IsSent() == true {
+		return
 	}
 
-	var es []Error
-	switch e := err.(type) {
-	case Error:
-		es = make([]Error, 1)
-		es[0] = e
-	case StackError:
-		es = e.Errors()
-	default:
-		es[0] = NewError("", "ERROR_HANDLE_INVALID_ERROR", errors.New("Error's type is not supported."))
+	h := a.errorHandler
+	if h == nil {
+		h = NewErrorHandler()
 	}
-
-	ei := make([]errorItemResponse, len(es))
-	for i, e := range es {
-		ei[i] = errorItemResponse{e.Code(), e.Message()}
-	}
-	er := &errorStackResponse{ei}
-	a.response.WithContent(er)
-}
-
-type errorStackResponse struct {
-	Errors []errorItemResponse `json:"errors"`
-}
-
-type errorItemResponse struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	PanicOnError(h.HandleError(connection, err))
 }

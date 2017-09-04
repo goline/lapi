@@ -9,44 +9,44 @@ import (
 // Router is an application's router
 type Router interface {
 	RouteRestfuller
+	RouteDispatcher
 	RouteInformer
 	RouteRegister
 	RouteGrouper
-	RouteMatcher
 	RouteManager
 }
 
 // RouteRestfuller uses common HTTP verbs to register routes
 type RouteRestfuller interface {
 	// Get registers a GET route handler
-	Get(version string, uri string, handler Handler) Route
+	Get(uri string, handler Handler) Route
 
 	// Post registers a POST route handler
-	Post(version string, uri string, handler Handler) Route
+	Post(uri string, handler Handler) Route
 
 	// Put registers a PUT route handler
-	Put(version string, uri string, handler Handler) Route
+	Put(uri string, handler Handler) Route
 
 	// Patch registers a PATCH route handler
-	Patch(version string, uri string, handler Handler) Route
+	Patch(uri string, handler Handler) Route
 
 	// Delete registers a DELETE route handler
-	Delete(version string, uri string, handler Handler) Route
+	Delete(uri string, handler Handler) Route
 }
 
 // RouteInformer allows to register special actions, such as Head, Options
 type RouteInformer interface {
 	// Head registers a HEAD route handler
-	Head(version string, uri string, handler Handler) Route
+	Head(uri string, handler Handler) Route
 
 	// Options registers an OPTION route handler
-	Options(version string, uri string, handler Handler) Route
+	Options(uri string, handler Handler) Route
 }
 
 // RouteRegister lets manually register a route
 type RouteRegister interface {
 	// Register enrolls a http route handler
-	Register(method string, version string, uri string, handler Handler) Route
+	Register(method string, uri string, handler Handler) Route
 }
 
 // RouteGrouper groups sub routes
@@ -56,12 +56,9 @@ type RouteGrouper interface {
 }
 
 // RouteMatcher matches request to route
-type RouteMatcher interface {
+type RouteDispatcher interface {
 	// Route performs routing
 	Route(request Request) error
-
-	// Match tests and returns matched route for proposed request
-	Match(request Request) Route
 }
 
 // RouteManager manages inner routes
@@ -100,40 +97,40 @@ type FactoryRouter struct {
 	prefix string
 }
 
-func (r *FactoryRouter) Get(version string, uri string, handler Handler) Route {
-	return r.Register(http.MethodGet, version, uri, handler)
+func (r *FactoryRouter) Get(uri string, handler Handler) Route {
+	return r.Register(http.MethodGet, uri, handler)
 }
 
-func (r *FactoryRouter) Post(version string, uri string, handler Handler) Route {
-	return r.Register(http.MethodPost, version, uri, handler)
+func (r *FactoryRouter) Post(uri string, handler Handler) Route {
+	return r.Register(http.MethodPost, uri, handler)
 }
 
-func (r *FactoryRouter) Put(version string, uri string, handler Handler) Route {
-	return r.Register(http.MethodPut, version, uri, handler)
+func (r *FactoryRouter) Put(uri string, handler Handler) Route {
+	return r.Register(http.MethodPut, uri, handler)
 }
 
-func (r *FactoryRouter) Patch(version string, uri string, handler Handler) Route {
-	return r.Register(http.MethodPatch, version, uri, handler)
+func (r *FactoryRouter) Patch(uri string, handler Handler) Route {
+	return r.Register(http.MethodPatch, uri, handler)
 }
 
-func (r *FactoryRouter) Delete(version string, uri string, handler Handler) Route {
-	return r.Register(http.MethodDelete, version, uri, handler)
+func (r *FactoryRouter) Delete(uri string, handler Handler) Route {
+	return r.Register(http.MethodDelete, uri, handler)
 }
 
-func (r *FactoryRouter) Head(version string, uri string, handler Handler) Route {
-	return r.Register(http.MethodHead, version, uri, handler)
+func (r *FactoryRouter) Head(uri string, handler Handler) Route {
+	return r.Register(http.MethodHead, uri, handler)
 }
 
-func (r *FactoryRouter) Options(version string, uri string, handler Handler) Route {
-	return r.Register(http.MethodOptions, version, uri, handler)
+func (r *FactoryRouter) Options(uri string, handler Handler) Route {
+	return r.Register(http.MethodOptions, uri, handler)
 }
 
-func (r *FactoryRouter) Register(method string, version string, uri string, handler Handler) Route {
+func (r *FactoryRouter) Register(method string, uri string, handler Handler) Route {
 	if r.parent != nil && r.prefix != "" {
 		uri = fmt.Sprintf("%s%s", r.prefix, uri)
-		return r.parent.Register(method, version, uri, handler)
+		return r.parent.Register(method, uri, handler)
 	} else {
-		route := NewRoute(method, version, uri, handler)
+		route := NewRoute(method, uri, handler)
 		_, ok := r.ByName(route.Name())
 		if ok == true {
 			panic(errors.New(fmt.Sprintf("Route with name %s has already been defined", route.Name())))
@@ -179,11 +176,13 @@ func (r *FactoryRouter) Remove(name string) Router {
 }
 
 func (r *FactoryRouter) Route(request Request) error {
-	return nil
-}
-
-func (r *FactoryRouter) Match(request Request) Route {
-	return nil
+	for _, route := range r.routes {
+		if matchedRoute, ok := route.Match(request); ok == true {
+			request.WithRoute(matchedRoute)
+			return nil
+		}
+	}
+	return NewSystemError(ERROR_HTTP_NOT_FOUND, "URL could not be found")
 }
 
 func (r *FactoryRouter) routeIndex(name string) (int, bool) {

@@ -67,14 +67,14 @@ type ResponseSender interface {
 	IsSent() bool
 }
 
-func NewResponse(w http.ResponseWriter) Response {
+func NewResponse(w http.ResponseWriter) (Response, error) {
 	return &FactoryResponse{
 		w:             w,
 		status:        http.StatusOK,
 		header:        NewHeader(),
 		isSent:        false,
 		ParserManager: NewParserManager(),
-	}
+	}, nil
 }
 
 type FactoryResponse struct {
@@ -145,7 +145,7 @@ func (r *FactoryResponse) Send() error {
 	ct, _ := r.header.Get("Content-Type")
 	p, ok := r.Parser(ct)
 	if ok == false {
-		return errors.New(fmt.Sprintf("Unable to find an appropriate parser for %v", ct))
+		return errors.New(fmt.Sprintf("Unable to find an appropriate parser for %s", ct))
 	}
 
 	b, err := p.Encode(r.content)

@@ -11,14 +11,14 @@ import (
 )
 
 func TestNewResponse(t *testing.T) {
-	r := NewResponse(nil)
+	r, _ := NewResponse(nil)
 	if _, ok := r.(Response); ok == false {
 		t.Errorf("Expects an instance of Response. Got %+v", r)
 	}
 }
 
 func TestFactoryResponse_DefaultStatus(t *testing.T) {
-	r := NewResponse(nil)
+	r, _ := NewResponse(nil)
 	if r.Status() != http.StatusOK {
 		t.Errorf("Expects default status code must be http.StatusOk. Got %v", r.Status())
 	}
