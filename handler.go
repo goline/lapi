@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 // Handler is a request's handler
@@ -24,43 +25,6 @@ func NewErrorHandler() ErrorHandler {
 	return &FactoryErrorHandler{}
 }
 
-type FactoryErrorHandler struct{}
-
-func (h *FactoryErrorHandler) HandleError(connection Connection, err error) error {
-	if e, ok := err.(ErrorStatus); ok == true {
-		connection.Response().WithStatus(e.Status())
-	} else {
-		connection.Response().WithStatus(http.StatusInternalServerError)
-	}
-
-	var es []Error
-	switch e := err.(type) {
-	case Error:
-		es = make([]Error, 1)
-		es[0] = e
-	case SystemError:
-		es = make([]Error, 1)
-		switch e.Code() {
-		case ERROR_HTTP_NOT_FOUND:
-			es[0] = NewError("ERROR_HTTP_NOT_FOUND", e.Message(), nil)
-		default:
-			es[0] = NewError(fmt.Sprintf("%d", e.Code()), e.Message(), nil)
-		}
-	case StackError:
-		es = e.Errors()
-	default:
-		es[0] = NewError("", "ERROR_HANDLE_INVALID_ERROR", errors.New("Error's type is not supported."))
-	}
-
-	ei := make([]errorItemResponse, len(es))
-	for i, e := range es {
-		ei[i] = errorItemResponse{e.Code(), e.Message()}
-	}
-	er := &errorStackResponse{ei}
-	connection.Response().WithContent(er)
-	return nil
-}
-
 type errorStackResponse struct {
 	Errors []errorItemResponse `json:"errors"`
 }
@@ -68,4 +32,58 @@ type errorStackResponse struct {
 type errorItemResponse struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
+}
+
+type FactoryErrorHandler struct{}
+
+func (h *FactoryErrorHandler) HandleError(connection Connection, err error) error {
+	switch e := err.(type) {
+	case SystemError:
+		h.handleSystemError(connection, e)
+	case StackError:
+		h.handleStackError(connection, e)
+	default:
+		h.handleUnknownError(connection, e)
+	}
+
+	return nil
+}
+
+func (h *FactoryErrorHandler) handleSystemError(c Connection, err SystemError) {
+	switch err.Code() {
+	case ERROR_HTTP_NOT_FOUND:
+		c.Response().WithStatus(http.StatusNotFound).
+			WithContent(h.getResponseContentForErrors(NewError("ERROR_HTTP_NOT_FOUND", http.StatusText(http.StatusNotFound), nil)))
+	case ERROR_HTTP_BAD_REQUEST:
+		c.Response().WithStatus(http.StatusBadRequest).
+			WithContent(h.getResponseContentForErrors(NewError("ERROR_HTTP_BAD_REQUEST", http.StatusText(http.StatusBadRequest), nil)))
+	default:
+		c.Response().WithStatus(http.StatusInternalServerError).
+			WithContent(h.getResponseContentForErrors(NewError("", err.Error(), nil)))
+	}
+}
+
+func (h *FactoryErrorHandler) handleStackError(c Connection, err StackError) {
+	c.Response().WithStatus(err.Status()).WithContent(h.getResponseContentForErrors(err.Errors()...))
+}
+
+func (h *FactoryErrorHandler) handleUnknownError(c Connection, err error) {
+	if e, ok := err.(ErrorStatus); ok == true {
+		c.Response().WithStatus(e.Status())
+	} else {
+		c.Response().WithStatus(http.StatusInternalServerError)
+	}
+	code := "ERROR_UNKNOWN_ERROR"
+	if e, ok := err.(ErrorCoder); ok == true {
+		code = e.Code()
+	}
+	c.Response().WithContent(h.getResponseContentForErrors(NewError(code, err.Error(), err)))
+}
+
+func (h *FactoryErrorHandler) getResponseContentForErrors(errors ...Error) *errorStackResponse {
+	ei := make([]errorItemResponse, len(errors))
+	for i, e := range errors {
+		ei[i] = errorItemResponse{e.Code(), e.Message()}
+	}
+	return &errorStackResponse{ei}
 }
