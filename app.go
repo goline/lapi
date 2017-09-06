@@ -169,9 +169,12 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.WithContainer(a.container)
 	}
 	result, err := handler.Handle(connection)
+	if err != nil {
+		a.handleError(connection, err)
+		return
+	}
 	for _, hook := range request.Route().Hooks() {
-		isContinue := hook.TearDown(connection, result, err)
-		if isContinue == false {
+		if hook.TearDown(connection, result, err) == false {
 			break
 		}
 	}

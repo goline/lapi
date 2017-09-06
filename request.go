@@ -320,7 +320,7 @@ func (r *FactoryRequest) parseRequestBody() error {
 	}
 	p, ok := r.Parser(ct)
 	if ok == false {
-		return errors.New(fmt.Sprintf("Unable to find an appropriate parser for %s", ct))
+		return NewSystemError(ERROR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", ct))
 	}
 	err = p.Decode(body, input)
 	if err != nil {

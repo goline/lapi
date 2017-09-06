@@ -134,6 +134,10 @@ func (r *FactoryResponse) WithCookies(cookies []*http.Cookie) Response {
 }
 
 func (r *FactoryResponse) Send() error {
+	if r.isSent {
+		return NewSystemError(ERROR_RESPONSE_ALREADY_SENT, "Response is already sent")
+	}
+
 	for _, cookie := range r.cookies {
 		http.SetCookie(r.w, cookie)
 	}
@@ -145,7 +149,7 @@ func (r *FactoryResponse) Send() error {
 	ct, _ := r.header.Get("Content-Type")
 	p, ok := r.Parser(ct)
 	if ok == false {
-		return errors.New(fmt.Sprintf("Unable to find an appropriate parser for %s", ct))
+		return NewSystemError(ERROR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", ct))
 	}
 
 	b, err := p.Encode(r.content)
