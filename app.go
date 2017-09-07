@@ -7,11 +7,12 @@ import (
 
 // App is a central application
 type App interface {
-	ContainerAware
 	AppLoader
 	AppRunner
-	AppConfigger
 	AppRouter
+	AppConfigger
+	ContainerAware
+	AppErrorHandler
 }
 
 // AppLoader handles application's loader
@@ -40,6 +41,9 @@ type AppRouter interface {
 
 // AppErrorHandler manages error handler
 type AppErrorHandler interface {
+	// ErrorHandler returns an instance of ErrorHandler
+	ErrorHandler() ErrorHandler
+
 	// WithErrorHandler sets error handler
 	WithErrorHandler(handler ErrorHandler) App
 }
@@ -109,14 +113,37 @@ func (a *FactoryApp) WithRouter(router Router) App {
 	return a
 }
 
+func (a *FactoryApp) ErrorHandler() ErrorHandler {
+	if a.errorHandler == nil {
+		a.errorHandler = NewErrorHandler()
+	}
+
+	return a.errorHandler
+}
+
 func (a *FactoryApp) WithErrorHandler(handler ErrorHandler) App {
 	a.errorHandler = handler
 	return a
 }
 
 func (a *FactoryApp) Run() {
+	a.setUp().handle()
+}
+
+func (a *FactoryApp) setUp() *FactoryApp {
+	if a.container == nil {
+		panic("App requires a container to run")
+	}
 	for _, loader := range a.loaders {
-		loader.SetUp(a)
+		loader.Load(a)
+	}
+	a.container.Inject(a.errorHandler)
+	return a
+}
+
+func (a *FactoryApp) handle() *FactoryApp {
+	if a.router == nil {
+		panic(NewSystemError(ERROR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
 	}
 
 	http.Handle("/", a)
@@ -125,45 +152,34 @@ func (a *FactoryApp) Run() {
 	} else {
 		panic(NewSystemError(ERROR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing")))
 	}
+	return a
 }
 
 func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	request, err := NewRequest(r)
-	if err != nil {
-		a.sendBadRequestResponse(w)
-		return
-	}
-
-	response, err := NewResponse(w)
-	if err != nil {
-		a.sendBadRequestResponse(w)
-		return
-	}
-
-	connection := NewConnection(request, response)
+	connection := a.setUpConnection(w, r)
 	defer a.forceSendResponse(connection)
 
-	if a.router == nil {
-		a.handleError(connection, NewSystemError(ERROR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
-	}
-
-	err = a.router.Route(request)
+	err := a.router.Route(connection.Request())
 	if err != nil {
 		a.handleError(connection, err)
 		return
 	}
 
-	for _, hook := range request.Route().Hooks() {
-		isContinue := hook.SetUp(connection)
-		if isContinue == false {
+	for _, hook := range connection.Request().Route().Hooks() {
+		if hook.SetUp(connection) == false {
 			break
 		}
 	}
-	if response.IsSent() == true {
+	if connection.Response().IsSent() == true {
 		return
 	}
 
-	handler := request.Route().Handler()
+	handler := connection.Request().Route().Handler()
+	if handler == nil {
+		a.handleError(connection, NewSystemError(ERROR_NO_HANDLER_FOUND, "No handler found"))
+		return
+	}
+
 	a.container.Inject(handler)
 	if h, ok := handler.(ContainerAware); ok == true {
 		h.WithContainer(a.container)
@@ -173,7 +189,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.handleError(connection, err)
 		return
 	}
-	for _, hook := range request.Route().Hooks() {
+	for _, hook := range connection.Request().Route().Hooks() {
 		if hook.TearDown(connection, result, err) == false {
 			break
 		}
@@ -186,22 +202,20 @@ func (a *FactoryApp) forceSendResponse(connection Connection) {
 	}
 }
 
-func (a *FactoryApp) sendBadRequestResponse(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusBadRequest)
+func (a *FactoryApp) setUpConnection(w http.ResponseWriter, r *http.Request) Connection {
+	request, err := NewRequest(r)
+	if err != nil {
+		a.handleError(nil, err)
+	}
+
+	response, err := NewResponse(w)
+	if err != nil {
+		a.handleError(nil, err)
+	}
+
+	return NewConnection(request, response)
 }
 
 func (a *FactoryApp) handleError(connection Connection, err error) {
-	for _, loader := range a.loaders {
-		loader.TearDown(a, err)
-	}
-
-	if connection.Response().IsSent() == true {
-		return
-	}
-
-	h := a.errorHandler
-	if h == nil {
-		h = NewErrorHandler()
-	}
-	PanicOnError(h.HandleError(connection, err))
+	PanicOnError(a.errorHandler.HandleError(connection, err))
 }

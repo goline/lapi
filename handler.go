@@ -37,6 +37,9 @@ type errorItemResponse struct {
 type FactoryErrorHandler struct{}
 
 func (h *FactoryErrorHandler) HandleError(connection Connection, err error) error {
+	if connection == nil {
+		return err
+	}
 	switch e := err.(type) {
 	case SystemError:
 		h.handleSystemError(connection, e)
