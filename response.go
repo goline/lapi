@@ -1,7 +1,6 @@
 package lapi
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 )

@@ -1,10 +1,7 @@
 package lapi
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
-	"strconv"
 )
 
 // Handler is a request's handler

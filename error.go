@@ -38,7 +38,7 @@ type StackError interface {
 
 // ErrorNo contains error's code
 type ErrorNo interface {
-	Code() uint16
+	Code() uint
 }
 
 type ErrorCoder interface {
@@ -146,16 +146,16 @@ func (e *FactoryStackError) Error() string {
 	return strings.Join(messages, "\n")
 }
 
-func NewSystemError(code uint16, message string) SystemError {
+func NewSystemError(code uint, message string) SystemError {
 	return &FactorySystemError{code, message}
 }
 
 type FactorySystemError struct {
-	code    uint16
+	code    uint
 	message string
 }
 
-func (e *FactorySystemError) Code() uint16 {
+func (e *FactorySystemError) Code() uint {
 	return e.code
 }
 
