@@ -160,10 +160,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer a.forceSendResponse(connection)
 
 	err := a.router.Route(connection.Request())
-	if err != nil {
-		a.handleError(connection, err)
-		return
-	}
+	PanicOnError(err)
 
 	for _, hook := range connection.Request().Route().Hooks() {
 		if hook.SetUp(connection) == false {
@@ -176,8 +173,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	handler := connection.Request().Route().Handler()
 	if handler == nil {
-		a.handleError(connection, NewSystemError(ERROR_NO_HANDLER_FOUND, "No handler found"))
-		return
+		panic(NewSystemError(ERROR_NO_HANDLER_FOUND, "No handler found"))
 	}
 
 	a.container.Inject(handler)
@@ -185,10 +181,6 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.WithContainer(a.container)
 	}
 	result, err := handler.Handle(connection)
-	if err != nil {
-		a.handleError(connection, err)
-		return
-	}
 	for _, hook := range connection.Request().Route().Hooks() {
 		if hook.TearDown(connection, result, err) == false {
 			break
@@ -197,6 +189,11 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *FactoryApp) forceSendResponse(connection Connection) {
+	if r := recover(); r != nil {
+		if err, ok := r.(error); ok == true {
+			a.errorHandler.HandleError(connection, err)
+		}
+	}
 	if connection.Response().IsSent() == false {
 		connection.Response().Send()
 	}
@@ -204,18 +201,10 @@ func (a *FactoryApp) forceSendResponse(connection Connection) {
 
 func (a *FactoryApp) setUpConnection(w http.ResponseWriter, r *http.Request) Connection {
 	request, err := NewRequest(r)
-	if err != nil {
-		a.handleError(nil, err)
-	}
+	PanicOnError(err)
 
 	response, err := NewResponse(w)
-	if err != nil {
-		a.handleError(nil, err)
-	}
+	PanicOnError(err)
 
 	return NewConnection(request, response)
-}
-
-func (a *FactoryApp) handleError(connection Connection, err error) {
-	PanicOnError(a.errorHandler.HandleError(connection, err))
 }
