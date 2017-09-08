@@ -1,9 +1,41 @@
 package lapi
 
+import (
+	"fmt"
+	"net/http"
+)
+
 // Validator helps validate inputs
 type Validator interface {
 	// Validate checks input against rules
 	Validate(input Bag, rules Rules) (bool, StackError)
+}
+
+func NewValidator() Validator {
+	return &FactoryValidator{}
+}
+
+type FactoryValidator struct{}
+
+func (v *FactoryValidator) Validate(input Bag, rules Rules) (bool, StackError) {
+	errors := make([]Error, 0)
+	for key, value := range input.All() {
+		checks := rules.Get(key)
+		if len(checks) == 0 {
+			continue
+		}
+		for _, checker := range checks {
+			if checker.Check(value) == false {
+				errors = append(errors, NewError("", fmt.Sprintf(checker.Message(), key), nil))
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return false, NewStackError(http.StatusBadRequest, errors)
+	}
+
+	return true, nil
 }
 
 // Checker validates input
