@@ -12,7 +12,7 @@ type App interface {
 	AppRouter
 	AppConfigger
 	ContainerAware
-	AppErrorHandler
+	AppRescuer
 }
 
 // AppLoader handles application's loader
@@ -39,13 +39,13 @@ type AppRouter interface {
 	WithRouter(router Router) App
 }
 
-// AppErrorHandler manages error handler
-type AppErrorHandler interface {
-	// ErrorHandler returns an instance of ErrorHandler
-	ErrorHandler() ErrorHandler
+// AppRescuer manages error handler
+type AppRescuer interface {
+	// Rescuer returns an instance of Rescuer
+	Rescuer() Rescuer
 
-	// WithErrorHandler sets error handler
-	WithErrorHandler(handler ErrorHandler) App
+	// WithRescuer sets error handler
+	WithRescuer(handler Rescuer) App
 }
 
 // AppRunner runs application
@@ -64,13 +64,13 @@ func NewApp() App {
 }
 
 type FactoryApp struct {
-	config       Config
-	container    Container
-	loaders      []Loader
-	request      Request
-	response     Response
-	router       Router
-	errorHandler ErrorHandler
+	config    Config
+	container Container
+	loaders   []Loader
+	request   Request
+	response  Response
+	router    Router
+	rescuer   Rescuer
 }
 
 func (a *FactoryApp) Container() Container {
@@ -113,16 +113,16 @@ func (a *FactoryApp) WithRouter(router Router) App {
 	return a
 }
 
-func (a *FactoryApp) ErrorHandler() ErrorHandler {
-	if a.errorHandler == nil {
-		a.errorHandler = NewErrorHandler()
+func (a *FactoryApp) Rescuer() Rescuer {
+	if a.rescuer == nil {
+		a.rescuer = NewRescuer()
 	}
 
-	return a.errorHandler
+	return a.rescuer
 }
 
-func (a *FactoryApp) WithErrorHandler(handler ErrorHandler) App {
-	a.errorHandler = handler
+func (a *FactoryApp) WithRescuer(handler Rescuer) App {
+	a.rescuer = handler
 	return a
 }
 
@@ -137,7 +137,7 @@ func (a *FactoryApp) setUp() *FactoryApp {
 	for _, loader := range a.loaders {
 		loader.Load(a)
 	}
-	a.container.Inject(a.errorHandler)
+	PanicOnError(a.container.Inject(a.rescuer))
 	return a
 }
 
@@ -159,9 +159,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	connection := a.setUpConnection(w, r)
 	defer a.forceSendResponse(connection)
 
-	err := a.router.Route(connection.Request())
-	PanicOnError(err)
-
+	PanicOnError(a.router.Route(connection.Request()))
 	for _, hook := range connection.Request().Route().Hooks() {
 		if hook.SetUp(connection) == false {
 			break
@@ -176,7 +174,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		panic(NewSystemError(ERROR_NO_HANDLER_FOUND, "No handler found"))
 	}
 
-	a.container.Inject(handler)
+	PanicOnError(a.container.Inject(handler))
 	if h, ok := handler.(ContainerAware); ok == true {
 		h.WithContainer(a.container)
 	}
@@ -191,7 +189,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (a *FactoryApp) forceSendResponse(connection Connection) {
 	if r := recover(); r != nil {
 		if err, ok := r.(error); ok == true {
-			a.errorHandler.HandleError(connection, err)
+			a.rescuer.Rescue(connection, err)
 		}
 	}
 	if connection.Response().IsSent() == false {
