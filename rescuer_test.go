@@ -13,7 +13,7 @@ func TestNewRescuer(t *testing.T) {
 }
 
 func TestFactoryRescuer_Rescue_HandleSystemError_HttpNotFound(t *testing.T) {
-	c := NewConnection(nil, &FactoryResponse{})
+	c := NewConnection(nil, getEmptyResponse())
 	e := NewSystemError(ERROR_HTTP_NOT_FOUND, "")
 	h := &FactoryRescuer{}
 	h.Rescue(c, e)
@@ -23,7 +23,7 @@ func TestFactoryRescuer_Rescue_HandleSystemError_HttpNotFound(t *testing.T) {
 }
 
 func TestFactoryRescuer_Rescue_HandleSystemError_HttpBadRequest(t *testing.T) {
-	c := NewConnection(nil, &FactoryResponse{})
+	c := NewConnection(nil, getEmptyResponse())
 	e := NewSystemError(ERROR_HTTP_BAD_REQUEST, "")
 	h := &FactoryRescuer{}
 	h.Rescue(c, e)
@@ -33,7 +33,7 @@ func TestFactoryRescuer_Rescue_HandleSystemError_HttpBadRequest(t *testing.T) {
 }
 
 func TestFactoryRescuer_Rescue_HandleSystemError_Default(t *testing.T) {
-	c := NewConnection(nil, &FactoryResponse{})
+	c := NewConnection(nil, getEmptyResponse())
 	e := NewSystemError(9999, "")
 	h := &FactoryRescuer{}
 	h.Rescue(c, e)
@@ -43,7 +43,7 @@ func TestFactoryRescuer_Rescue_HandleSystemError_Default(t *testing.T) {
 }
 
 func TestFactoryRescuer_Rescue_HandleStackError(t *testing.T) {
-	c := NewConnection(nil, &FactoryResponse{})
+	c := NewConnection(nil, getEmptyResponse())
 	e := NewStackError(http.StatusInternalServerError, []Error{NewError("11", "err1", nil)})
 	h := &FactoryRescuer{}
 	h.Rescue(c, e)
@@ -53,7 +53,7 @@ func TestFactoryRescuer_Rescue_HandleStackError(t *testing.T) {
 }
 
 func TestFactoryRescuer_Rescue_UnknownError(t *testing.T) {
-	c := NewConnection(nil, &FactoryResponse{})
+	c := NewConnection(nil, getEmptyResponse())
 	e := NewError("11", "err1", nil)
 	h := &FactoryRescuer{}
 	h.Rescue(c, e)
@@ -68,7 +68,7 @@ func (e *myUnknownError) Error() string { return "" }
 func (e *myUnknownError) Status() int   { return http.StatusInternalServerError }
 
 func TestFactoryRescuer_Rescue_UnknownErrorWithStatus(t *testing.T) {
-	c := NewConnection(nil, &FactoryResponse{})
+	c := NewConnection(nil, getEmptyResponse())
 	e := &myUnknownError{}
 	h := &FactoryRescuer{}
 	h.Rescue(c, e)
@@ -84,4 +84,8 @@ func TestFactoryRescuer_Rescue_NotHandle(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is nil")
 	}
+}
+
+func getEmptyResponse() Response {
+	return &FactoryResponse{Body: NewBody()}
 }

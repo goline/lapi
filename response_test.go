@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 )
 
@@ -56,25 +55,6 @@ func TestFactoryResponse_WithMessage(t *testing.T) {
 	}
 }
 
-func TestFactoryResponse_Content(t *testing.T) {
-	r := &FactoryResponse{}
-	c := make(map[string]interface{})
-	c["my_key"] = "my_value"
-	r.content = c
-	if reflect.DeepEqual(r.Content(), c) == false {
-		t.Errorf("Expects content has been set. Got %v", r.Content())
-	}
-}
-
-func TestFactoryResponse_WithContent(t *testing.T) {
-	r := &FactoryResponse{}
-	c := make(map[string]interface{})
-	c["my_key"] = "my_value"
-	if reflect.DeepEqual(r.WithContent(c).Content(), c) == false {
-		t.Errorf("Expects content has been set. Got %v", r.Content())
-	}
-}
-
 func TestFactoryResponse_Header(t *testing.T) {
 	r := &FactoryResponse{}
 	h := NewHeader()
@@ -120,9 +100,10 @@ func TestFactoryResponse_WithCookies(t *testing.T) {
 
 func TestFactoryResponse_Send(t *testing.T) {
 	h := func(w http.ResponseWriter, r *http.Request) {
-		rs := &FactoryResponse{w: w, ParserManager: NewParserManager()}
+		rs := &FactoryResponse{writer: w, Body: NewBody(), header: NewHeader()}
+		rs.WithContentType(CONTENT_TYPE_JSON)
+		rs.WithParser(&parser.JsonParser{})
 		rs.WithStatus(http.StatusInternalServerError)
-		rs.WithHeader(NewHeader()).Header().Set("content-type", "application/json")
 		rs.Header().Set("x-custom-flag", "1234")
 		c := make(map[string]interface{})
 		c["status"] = true
@@ -132,7 +113,6 @@ func TestFactoryResponse_Send(t *testing.T) {
 			&http.Cookie{Name: "my_c1", Value: "my_val1"},
 			&http.Cookie{Name: "my_c2", Value: "my_val2"},
 		})
-		rs.WithParser(&parser.JsonParser{})
 		rs.Send()
 	}
 	rq := httptest.NewRequest("GET", "/test", nil)
