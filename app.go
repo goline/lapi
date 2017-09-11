@@ -161,9 +161,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	PanicOnError(a.router.Route(connection.Request()))
 	for _, hook := range connection.Request().Route().Hooks() {
-		if hook.SetUp(connection) == false {
-			break
-		}
+		PanicOnError(hook.SetUp(connection))
 	}
 	if connection.Response().IsSent() == true {
 		return
@@ -180,9 +178,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := handler.Handle(connection)
 	for _, hook := range connection.Request().Route().Hooks() {
-		if hook.TearDown(connection, result, err) == false {
-			break
-		}
+		PanicOnError(hook.TearDown(connection, result, err))
 	}
 }
 

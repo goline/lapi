@@ -53,7 +53,7 @@ func TestFactoryRequest_WithRoute(t *testing.T) {
 func TestFactoryRequest_Header(t *testing.T) {
 	a, _ := http.NewRequest("GET", "/test", nil)
 	a.Header.Set("content-type", "application/json")
-	r := &FactoryRequest{}
+	r := &FactoryRequest{header: NewHeader(), RequestBody: NewBody()}
 	r.ancestor = a
 	r.parseRequest()
 	if v, ok := r.Header().Get("Content-Type"); ok == false || v != "application/json" {
@@ -64,7 +64,7 @@ func TestFactoryRequest_Header(t *testing.T) {
 func TestFactoryRequest_WithHeader(t *testing.T) {
 	h := NewHeader()
 	h.Set("content-Type", "application/json")
-	r := &FactoryRequest{}
+	r := &FactoryRequest{header: NewHeader()}
 	r.WithHeader(h)
 	if v, ok := r.Header().Get("Content-Type"); ok == false || v != "application/json" {
 		t.Errorf("Expects header content-type equals application/json")

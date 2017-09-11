@@ -1,7 +1,6 @@
 package lapi
 
 import (
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -102,10 +101,11 @@ type RequestParameter interface {
 
 func NewRequest(req *http.Request) (Request, error) {
 	r := &FactoryRequest{
-		ancestor: req,
-		cookies:  make(map[string]*http.Cookie),
-		params:   NewBag(),
-		Body:     NewBody(),
+		ancestor:    req,
+		cookies:     make(map[string]*http.Cookie),
+		params:      NewBag(),
+		header:      NewHeader(),
+		RequestBody: NewBody(),
 	}
 	if req != nil {
 		if err := r.parseRequest(); err != nil {
@@ -127,7 +127,7 @@ type FactoryRequest struct {
 	host     string
 	port     int
 	uri      string
-	Body
+	RequestBody
 }
 
 func (r *FactoryRequest) Ancestor() *http.Request {
@@ -231,6 +231,8 @@ func (r *FactoryRequest) WithParam(key string, value interface{}) Request {
 }
 
 func (r *FactoryRequest) parseRequest() error {
+	r.parseContentType()
+
 	var err error
 	err = r.parseRequestAddress()
 	if err != nil {
@@ -238,11 +240,6 @@ func (r *FactoryRequest) parseRequest() error {
 	}
 
 	err = r.parseRequestHeader()
-	if err != nil {
-		return err
-	}
-
-	err = r.parseRequestBody()
 	if err != nil {
 		return err
 	}
@@ -282,21 +279,6 @@ func (r *FactoryRequest) parseRequestHeader() error {
 	for key := range r.ancestor.Header {
 		r.Header().Set(key, r.ancestor.Header.Get(key))
 	}
-	return nil
-}
-
-func (r *FactoryRequest) parseRequestBody() error {
-	if r.ancestor.Body == nil {
-		return nil
-	}
-
-	body, err := ioutil.ReadAll(r.ancestor.Body)
-	if err != nil {
-		return err
-	}
-	r.parseContentType()
-	r.WithContentBytes(body)
-
 	return nil
 }
 

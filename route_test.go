@@ -104,10 +104,8 @@ func TestFactoryRoute_WithHandler(t *testing.T) {
 
 type routeHook struct{}
 
-func (h *routeHook) SetUp(connection Connection) bool { return false }
-func (h *routeHook) TearDown(connection Connection, result interface{}, err error) bool {
-	return false
-}
+func (h *routeHook) SetUp(connection Connection) error                                   { return nil }
+func (h *routeHook) TearDown(connection Connection, result interface{}, err error) error { return nil }
 
 func TestFactoryRoute_Hooks(t *testing.T) {
 	r := &FactoryRoute{}

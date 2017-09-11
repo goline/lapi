@@ -21,7 +21,7 @@ type BodyContent interface {
 	ContentBytes() ([]byte, error)
 
 	// WithContentBytes sets body's content's bytes
-	WithContentBytes(bytes []byte) Body
+	WithContentBytes(bytes []byte, v interface{}) Body
 
 	// ContentType returns type of body's content
 	ContentType() string
@@ -78,17 +78,16 @@ func (b *FactoryBody) ContentBytes() ([]byte, error) {
 	return b.contentBytes, b.err
 }
 
-func (b *FactoryBody) WithContentBytes(bytes []byte) Body {
+func (b *FactoryBody) WithContentBytes(bytes []byte, v interface{}) Body {
 	b.reset()
 
 	p, ok := b.Parser(b.contentType)
 	if ok == true {
-		var content interface{}
-		err := p.Decode(bytes, content)
+		err := p.Decode(bytes, v)
 		if err != nil {
 			b.err = err
 		} else {
-			b.content = content
+			b.content = v
 			b.contentBytes = bytes
 		}
 	} else {

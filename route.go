@@ -69,6 +69,20 @@ type RouteHooker interface {
 	WithHooks(hooks ...Hook) Route
 }
 
+type RouteBodyIO interface {
+	// RequestInput returns an object represents body's input
+	RequestInput() interface{}
+
+	// WithRequestInput sets body's input object
+	WithRequestInput(input interface{}) Route
+
+	// ResponseOutput returns body's output object
+	ResponseOutput() interface{}
+
+	// WithResponseOutput sets body's output
+	WithResponseOutput(output interface{}) Route
+}
+
 func NewRoute(method string, uri string, handler Handler) Route {
 	r := &FactoryRoute{
 		pvHost: &patternVerifier{},
