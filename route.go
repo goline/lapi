@@ -97,14 +97,16 @@ func NewRoute(method string, uri string, handler Handler) Route {
 }
 
 type FactoryRoute struct {
-	name    string
-	host    string
-	method  string
-	uri     string
-	handler Handler
-	hooks   []Hook
-	pvHost  *patternVerifier
-	pvUri   *patternVerifier
+	name           string
+	host           string
+	method         string
+	uri            string
+	handler        Handler
+	hooks          []Hook
+	pvHost         *patternVerifier
+	pvUri          *patternVerifier
+	requestInput   interface{}
+	responseOutput interface{}
 }
 
 type patternVerifier struct {
@@ -186,6 +188,24 @@ func (r *FactoryRoute) Match(request Request) (Route, bool) {
 	r.modifyRequestOnMatch(request, r.pvHost, host)
 	r.modifyRequestOnMatch(request, r.pvUri, uri)
 	return r, true
+}
+
+func (r *FactoryRoute) RequestInput() interface{} {
+	return r.requestInput
+}
+
+func (r *FactoryRoute) WithRequestInput(input interface{}) Route {
+	r.requestInput = input
+	return r
+}
+
+func (r *FactoryRoute) ResponseOutput() interface{} {
+	return r.responseOutput
+}
+
+func (r *FactoryRoute) WithResponseOutput(output interface{}) Route {
+	r.responseOutput = output
+	return r
 }
 
 func (r *FactoryRoute) genRouteName() string {
