@@ -73,6 +73,7 @@ func NewRoute(method string, uri string, handler Handler) Route {
 	r := &FactoryRoute{
 		pvHost: &patternVerifier{},
 		pvUri:  &patternVerifier{},
+		hooks:  make([]Hook, 0),
 	}
 	return r.
 		WithMethod(method).

@@ -204,5 +204,8 @@ func (a *FactoryApp) setUpConnection(w http.ResponseWriter, r *http.Request) Con
 	response, err := NewResponse(w)
 	PanicOnError(err)
 
+	// let make request and response have same content-type and charset as default
+	response.WithContentType(request.ContentType()).WithCharset(request.Charset())
+
 	return NewConnection(request, response)
 }

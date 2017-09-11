@@ -2,7 +2,6 @@ package lapi
 
 import (
 	"net/http"
-	"reflect"
 	"testing"
 )
 
@@ -107,24 +106,6 @@ func TestFactoryRequest_WithCookies(t *testing.T) {
 	r.WithCookies(cookies)
 	if len(r.cookies) != 2 || r.cookies["k1"].Value != "v1" || r.cookies["k2"].Value != "v2" {
 		t.Errorf("Expects cookies is set correctly. Got %v", r.cookies)
-	}
-}
-
-func TestFactoryRequest_Input(t *testing.T) {
-	input := map[string]string{"name": "value"}
-	r := &FactoryRequest{}
-	r.input = input
-	if reflect.DeepEqual(r.Input(), input) == false {
-		t.Errorf("Expects input is assigned. Got %v", r.Input())
-	}
-}
-
-func TestFactoryRequest_WithInput(t *testing.T) {
-	input := map[string]string{"name": "value"}
-	r := &FactoryRequest{}
-	r.WithInput(input)
-	if reflect.DeepEqual(r.Input(), input) == false {
-		t.Errorf("Expects input is assigned. Got %v", r.Input())
 	}
 }
 

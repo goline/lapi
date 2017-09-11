@@ -1,23 +1,24 @@
 package lapi
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
 )
 
 // Request represents for an application's request
 type Request interface {
+	RequestBody
 	RequestHeader
 	RequestCookies
-	RequestInputer
 	RequestAncestor
 	RequestResolver
 	RequestInformer
 	RequestParameter
-	ParserManager
 }
+
+type RequestBody Body
 
 // RequestAncestor keeps original http.Request
 type RequestAncestor interface {
@@ -90,15 +91,6 @@ type RequestCookies interface {
 	WithCookies(cookies []*http.Cookie) Request
 }
 
-// RequestInputer handles request's input (body)
-type RequestInputer interface {
-	// Input returns request's input
-	Input() interface{}
-
-	// WithInput sets request's input
-	WithInput(input interface{}) Request
-}
-
 // RequestParameter handles request's query parameters and additional parameters
 type RequestParameter interface {
 	// Param returns value of a proposed key if exists, ok will be false if key is not found
@@ -110,10 +102,10 @@ type RequestParameter interface {
 
 func NewRequest(req *http.Request) (Request, error) {
 	r := &FactoryRequest{
-		ancestor:      req,
-		cookies:       make(map[string]*http.Cookie),
-		params:        NewBag(),
-		ParserManager: NewParserManager(),
+		ancestor: req,
+		cookies:  make(map[string]*http.Cookie),
+		params:   NewBag(),
+		Body:     NewBody(),
 	}
 	if req != nil {
 		if err := r.parseRequest(); err != nil {
@@ -135,7 +127,7 @@ type FactoryRequest struct {
 	host     string
 	port     int
 	uri      string
-	ParserManager
+	Body
 }
 
 func (r *FactoryRequest) Ancestor() *http.Request {
@@ -229,15 +221,6 @@ func (r *FactoryRequest) WithCookies(cookies []*http.Cookie) Request {
 	return r
 }
 
-func (r *FactoryRequest) Input() interface{} {
-	return r.input
-}
-
-func (r *FactoryRequest) WithInput(input interface{}) Request {
-	r.input = input
-	return r
-}
-
 func (r *FactoryRequest) Param(key string) (value interface{}, ok bool) {
 	return r.params.Get(key)
 }
@@ -311,21 +294,8 @@ func (r *FactoryRequest) parseRequestBody() error {
 	if err != nil {
 		return err
 	}
-
-	var input interface{}
-	ct, ok := r.header.Get("Content-Type")
-	if ok == false {
-		ct = CONTENT_TYPE_DEFAULT
-	}
-	p, ok := r.Parser(ct)
-	if ok == false {
-		return NewSystemError(ERROR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", ct))
-	}
-	err = p.Decode(body, input)
-	if err != nil {
-		return err
-	}
-	r.WithInput(input)
+	r.parseContentType()
+	r.WithContentBytes(body)
 
 	return nil
 }
@@ -333,4 +303,23 @@ func (r *FactoryRequest) parseRequestBody() error {
 func (r *FactoryRequest) parseCookies() error {
 	r.WithCookies(r.ancestor.Cookies())
 	return nil
+}
+
+func (r *FactoryRequest) parseContentType() {
+	contentType, ok := r.header.Get(HEADER_CONTENT_TYPE)
+	if ok == false {
+		r.WithContentType(CONTENT_TYPE_DEFAULT).WithCharset(CONTENT_CHARSET_DEFAULT)
+	} else {
+		reg, err := regexp.Compile(`^([\w-/]+)(;?[ ]+charset=([\w-]+))?$`)
+		PanicOnError(err)
+		matches := reg.FindStringSubmatch(contentType)
+		switch len(matches) {
+		case 2:
+			r.WithContentType(matches[1]).WithCharset(CONTENT_CHARSET_DEFAULT)
+		case 4:
+			r.WithContentType(matches[1]).WithCharset(matches[3])
+		default:
+			r.WithContentType(CONTENT_TYPE_DEFAULT).WithCharset(CONTENT_CHARSET_DEFAULT)
+		}
+	}
 }

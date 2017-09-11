@@ -16,7 +16,10 @@ const (
 	SCHEME_HTTP  = "http"
 	SCHEME_HTTPS = "https"
 
-	CONTENT_TYPE_JSON    = "application/json"
-	CONTENT_TYPE_XML     = "application/xml"
-	CONTENT_TYPE_DEFAULT = CONTENT_TYPE_JSON
+	HEADER_CONTENT_TYPE = "content-type"
+
+	CONTENT_TYPE_JSON       = "application/json"
+	CONTENT_TYPE_XML        = "application/xml"
+	CONTENT_TYPE_DEFAULT    = CONTENT_TYPE_JSON
+	CONTENT_CHARSET_DEFAULT = "utf-8"
 )
