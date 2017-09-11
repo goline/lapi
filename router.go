@@ -53,6 +53,12 @@ type RouteRegister interface {
 type RouteGrouper interface {
 	// Group collects a number of routes
 	Group(prefix string) Router
+
+	// WithHook allows to add hook to all router's routes
+	WithHook(hook Hook) Router
+
+	// WithTag adds a tag to all routes
+	WithTag(tag string) Router
 }
 
 // RouteMatcher matches request to route
@@ -74,6 +80,11 @@ type RouteManager interface {
 
 	// Remove deletes a route by name
 	Remove(name string) Router
+}
+
+type RouteCopier interface {
+	// Copy add all routes of input router to current router
+	Copy(router Router) Router
 }
 
 // NewRouter returns an instance of Router
@@ -145,6 +156,22 @@ func (r *FactoryRouter) Group(prefix string) Router {
 	return NewGroupRouter(r, prefix)
 }
 
+func (r *FactoryRouter) WithHook(hook Hook) Router {
+	for _, route := range r.routes {
+		route.WithHook(hook)
+	}
+	return r
+}
+
+func (r *FactoryRouter) WithTag(tag string) Router {
+	for _, route := range r.routes {
+		if re, ok := route.(RouteTagger); ok == true {
+			re.WithTag(tag)
+		}
+	}
+	return r
+}
+
 func (r *FactoryRouter) ByName(name string) (Route, bool) {
 	for _, route := range r.routes {
 		if route.Name() == name {
@@ -183,6 +210,13 @@ func (r *FactoryRouter) Route(request Request) error {
 		}
 	}
 	return NewSystemError(ERROR_HTTP_NOT_FOUND, "URL could not be found")
+}
+
+func (r *FactoryRouter) Copy(router Router) Router {
+	for _, route := range router.Routes() {
+		r.routes = append(r.routes, route)
+	}
+	return r
 }
 
 func (r *FactoryRouter) routeIndex(name string) (int, bool) {

@@ -2,7 +2,6 @@ package lapi
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -161,7 +160,6 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer a.forceSendResponse(connection)
 
 	PanicOnError(a.router.Route(connection.Request()))
-	PanicOnError(a.postRoutingRequest(connection.Request()))
 	for _, hook := range connection.Request().Route().Hooks() {
 		PanicOnError(hook.SetUp(connection))
 	}
@@ -206,22 +204,4 @@ func (a *FactoryApp) setUpConnection(w http.ResponseWriter, r *http.Request) Con
 	response.WithContentType(request.ContentType()).WithCharset(request.Charset())
 
 	return NewConnection(request, response)
-}
-
-func (a *FactoryApp) postRoutingRequest(request Request) error {
-	if request.Ancestor().Body == nil {
-		return nil
-	}
-
-	rb, ok := request.Route().(RouteBodyIO)
-	if ok == false {
-		return nil
-	}
-
-	body, err := ioutil.ReadAll(request.Ancestor().Body)
-	if err != nil {
-		return err
-	}
-	request.WithContentBytes(body, rb.RequestInput())
-	return nil
 }

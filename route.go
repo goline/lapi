@@ -67,6 +67,9 @@ type RouteHooker interface {
 
 	// WithHooks allows to add hooks
 	WithHooks(hooks ...Hook) Route
+
+	// WithHook add a single hook
+	WithHook(hook Hook) Route
 }
 
 type RouteBodyIO interface {
@@ -83,11 +86,24 @@ type RouteBodyIO interface {
 	WithResponseOutput(output interface{}) Route
 }
 
+// RouteTagger lets route become taggable
+type RouteTagger interface {
+	// Tags returns all tags of route
+	Tags() []string
+
+	// WithTag adds a tag to route
+	WithTag(tag string) Route
+
+	// WithTags sets route's tags
+	WithTags(tags ...string) Route
+}
+
 func NewRoute(method string, uri string, handler Handler) Route {
 	r := &FactoryRoute{
 		pvHost: &patternVerifier{},
 		pvUri:  &patternVerifier{},
 		hooks:  make([]Hook, 0),
+		tags:   make([]string, 0),
 	}
 	return r.
 		WithMethod(method).
@@ -107,6 +123,7 @@ type FactoryRoute struct {
 	pvUri          *patternVerifier
 	requestInput   interface{}
 	responseOutput interface{}
+	tags           []string
 }
 
 type patternVerifier struct {
@@ -177,6 +194,11 @@ func (r *FactoryRoute) WithHooks(hooks ...Hook) Route {
 	return r
 }
 
+func (r *FactoryRoute) WithHook(hook Hook) Route {
+	r.hooks = append(r.hooks, hook)
+	return r
+}
+
 func (r *FactoryRoute) Match(request Request) (Route, bool) {
 	method := request.Method()
 	host := request.Host()
@@ -205,6 +227,20 @@ func (r *FactoryRoute) ResponseOutput() interface{} {
 
 func (r *FactoryRoute) WithResponseOutput(output interface{}) Route {
 	r.responseOutput = output
+	return r
+}
+
+func (r *FactoryRoute) Tags() []string {
+	return r.tags
+}
+
+func (r *FactoryRoute) WithTag(tag string) Route {
+	r.tags = append(r.tags, tag)
+	return r
+}
+
+func (r *FactoryRoute) WithTags(tags ...string) Route {
+	r.tags = tags
 	return r
 }
 
