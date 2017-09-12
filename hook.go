@@ -22,16 +22,11 @@ func (h *SystemHook) SetUp(connection Connection) error {
 		return nil
 	}
 
-	rb, ok := request.Route().(RouteBodyIO)
-	if ok == false {
-		return nil
-	}
-
 	body, err := ioutil.ReadAll(request.Ancestor().Body)
 	if err != nil {
 		return err
 	}
-	request.WithContentBytes(body, rb.RequestInput())
+	request.WithContentBytes(body, request.Route().RequestInput())
 	return nil
 }
 

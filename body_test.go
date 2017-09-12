@@ -1,8 +1,10 @@
 package lapi
 
 import (
-	"github.com/goline/lapi/parser"
+	"errors"
 	"testing"
+
+	"github.com/goline/lapi/parser"
 )
 
 func TestNewBody(t *testing.T) {
@@ -66,6 +68,28 @@ func TestFactoryBody_WithContent(t *testing.T) {
 	}
 }
 
+type sampleParserForBody struct{}
+
+func (p *sampleParserForBody) Encode(v interface{}) ([]byte, error) {
+	return make([]byte, 0), errors.New("UNABLE_TO_ENCODE")
+}
+func (p *sampleParserForBody) Decode(data []byte, v interface{}) error {
+	return errors.New("UNABLE_TO_DECODE")
+}
+func (p *sampleParserForBody) ContentType() string {
+	return CONTENT_TYPE_JSON
+}
+
+func TestFactoryBody_WithContent_ErrorEncoding(t *testing.T) {
+	b := &FactoryBody{ParserManager: NewParserManager()}
+	b.WithParser(new(sampleParserForBody))
+	b.WithContentType(CONTENT_TYPE_JSON)
+	b.WithContent("a_string")
+	if b.err == nil || b.err.Error() != "UNABLE_TO_ENCODE" {
+		t.Errorf("Expects err is not nil")
+	}
+}
+
 func TestFactoryBody_ContentBytes(t *testing.T) {
 	b := &FactoryBody{}
 	if len(b.contentBytes) != 0 || b.err != nil {
@@ -97,5 +121,30 @@ func TestFactoryBody_WithContentBytes(t *testing.T) {
 	}
 	if v.Price != 5.67 {
 		t.Errorf("Expects content is set correctly. Got %v", v)
+	}
+}
+
+func TestFactoryBody_WithContentBytes_ErrorDecoding(t *testing.T) {
+	b := &FactoryBody{ParserManager: NewParserManager()}
+	b.WithParser(new(sampleParserForBody))
+	b.WithContentType(CONTENT_TYPE_JSON)
+	b.WithContentBytes([]byte("a_string"), nil)
+	if b.err == nil || b.err.Error() != "UNABLE_TO_DECODE" {
+		t.Errorf("Expects err is not nil")
+	}
+}
+
+func TestFactoryBody_ContentType(t *testing.T) {
+	b := &FactoryBody{}
+	b.contentType = CONTENT_TYPE_XML
+	if b.ContentType() != CONTENT_TYPE_XML {
+		t.Errorf("Expects contentType is xml. Got %s", b.ContentType())
+	}
+}
+
+func TestFactoryBody_WithContentType(t *testing.T) {
+	b := &FactoryBody{}
+	if b.WithContentType(CONTENT_TYPE_XML).ContentType() != CONTENT_TYPE_XML {
+		t.Errorf("Expects contentType is xml. Got %s", b.ContentType())
 	}
 }

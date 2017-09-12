@@ -8,6 +8,8 @@ import (
 
 // Route acts a route describer
 type Route interface {
+	RouteBodyIO
+	RouteTagger
 	RouteHooker
 	RouteHandler
 	RouteMatcher

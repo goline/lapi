@@ -2,6 +2,7 @@ package lapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/goline/lapi/parser"
 	"io/ioutil"
 	"net/http"
@@ -10,14 +11,14 @@ import (
 )
 
 func TestNewResponse(t *testing.T) {
-	r, _ := NewResponse(nil)
-	if _, ok := r.(Response); ok == false {
+	r := NewResponse(nil)
+	if r == nil {
 		t.Errorf("Expects an instance of Response. Got %+v", r)
 	}
 }
 
 func TestFactoryResponse_DefaultStatus(t *testing.T) {
-	r, _ := NewResponse(nil)
+	r := NewResponse(nil)
 	if r.Status() != http.StatusOK {
 		t.Errorf("Expects default status code must be http.StatusOk. Got %v", r.Status())
 	}
@@ -147,5 +148,79 @@ func TestFactoryResponse_Send(t *testing.T) {
 
 	if r.Cookies()[0].Name != "my_c1" || r.Cookies()[0].Value != "my_val1" || r.Cookies()[1].Name != "my_c2" || r.Cookies()[1].Value != "my_val2" {
 		t.Errorf("Expects cookies have been set. Got %v", r.Cookies())
+	}
+}
+
+func TestFactoryResponse_Send_ErrorNoWriter(t *testing.T) {
+	r := &FactoryResponse{}
+	err := r.Send()
+	if err == nil {
+		t.Errorf("Expects err is not nil")
+	}
+	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_NO_WRITER_FOUND {
+		t.Errorf("Expects got error response has no writers. Got %v", e)
+	}
+}
+
+func TestFactoryResponse_Send_ErrorAlreadySent(t *testing.T) {
+	r := &FactoryResponse{writer: httptest.NewRecorder()}
+	r.isSent = true
+	err := r.Send()
+	if err == nil {
+		t.Errorf("Expects err is not nil")
+	}
+	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_RESPONSE_ALREADY_SENT {
+		t.Errorf("Expects got error response is already sent. Got %v", e)
+	}
+}
+
+func TestFactoryResponse_Send_ErrorContentTypeEmpty(t *testing.T) {
+	r := &FactoryResponse{writer: httptest.NewRecorder(), Body: NewBody()}
+	err := r.Send()
+	if err == nil {
+		t.Errorf("Expects err is not nil")
+	}
+	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_CONTENT_TYPE_EMPTY {
+		t.Errorf("Expects got error response's content-type is empty. Got %v", e)
+	}
+}
+
+func TestFactoryResponse_Send_HeaderContentTypeIsSet(t *testing.T) {
+	r := &FactoryResponse{writer: httptest.NewRecorder(), header: NewHeader(), Body: NewBody()}
+	r.WithContentType(CONTENT_TYPE_JSON)
+	r.WithCharset(CONTENT_CHARSET_DEFAULT)
+	r.Send()
+	if c, ok := r.header.Get(HEADER_CONTENT_TYPE); ok == false || c != fmt.Sprintf("%s; charset=%s", CONTENT_TYPE_JSON, CONTENT_CHARSET_DEFAULT) {
+		t.Errorf("Expects header is set correctly. Got %s", c)
+	}
+}
+
+func TestFactoryResponse_Send_ContentError(t *testing.T) {
+	r := &FactoryResponse{writer: httptest.NewRecorder(), header: NewHeader(), Body: NewBody()}
+	r.WithContentType(CONTENT_TYPE_JSON)
+	r.WithCharset(CONTENT_CHARSET_DEFAULT)
+	r.WithContent("a_string")
+	err := r.Send()
+	if err == nil {
+		t.Errorf("Expects err is not nil")
+	}
+	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_NO_PARSER_FOUND {
+		t.Errorf("Expects got error response has no parser. Got %v", e)
+	}
+}
+
+func TestFactoryResponse_Send_HasMessage(t *testing.T) {
+	r := &FactoryResponse{writer: httptest.NewRecorder(), header: NewHeader(), Body: NewBody()}
+	r.WithContentType(CONTENT_TYPE_JSON)
+	r.WithCharset(CONTENT_CHARSET_DEFAULT)
+	r.WithMessage("HTTP NOT FOUND")
+	r.Send()
+}
+
+func TestFactoryResponse_IsSent(t *testing.T) {
+	r := &FactoryResponse{}
+	r.isSent = true
+	if r.IsSent() != true {
+		t.Errorf("Expects isSent is true. Got %t", r.IsSent())
 	}
 }

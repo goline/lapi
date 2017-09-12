@@ -139,7 +139,9 @@ func (r *FactoryRouter) Options(uri string, handler Handler) Route {
 func (r *FactoryRouter) Register(method string, uri string, handler Handler) Route {
 	if r.parent != nil && r.prefix != "" {
 		uri = fmt.Sprintf("%s%s", r.prefix, uri)
-		return r.parent.Register(method, uri, handler)
+		route := r.parent.Register(method, uri, handler)
+		r.routes = append(r.routes, route)
+		return route
 	} else {
 		route := NewRoute(method, uri, handler)
 		_, ok := r.ByName(route.Name())
@@ -165,8 +167,8 @@ func (r *FactoryRouter) WithHook(hook Hook) Router {
 
 func (r *FactoryRouter) WithTag(tag string) Router {
 	for _, route := range r.routes {
-		if re, ok := route.(RouteTagger); ok == true {
-			re.WithTag(tag)
+		if tagger, ok := route.(RouteTagger); ok == true {
+			tagger.WithTag(tag)
 		}
 	}
 	return r

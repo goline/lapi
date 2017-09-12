@@ -166,7 +166,7 @@ func TestFactoryRouter_Route(t *testing.T) {
 	r := &FactoryRouter{routes: make([]Route, 0)}
 	r.Get("/test", nil).WithName("Get_Test")
 	r.Post("/test", nil).WithName("Post_Test")
-	req, _ := NewRequest(nil)
+	req := NewRequest(nil)
 	req.WithMethod(http.MethodPost).WithUri("/test")
 	err := r.Route(req)
 	if err != nil {
@@ -180,7 +180,7 @@ func TestFactoryRouter_Route(t *testing.T) {
 func TestFactoryRouter_Route_NotFound(t *testing.T) {
 	r := &FactoryRouter{routes: make([]Route, 0)}
 	r.Get("/test", nil).WithName("Get_Test")
-	req, _ := NewRequest(nil)
+	req := NewRequest(nil)
 	req.WithMethod(http.MethodPost).WithUri("/test")
 	err := r.Route(req)
 	if err == nil {
@@ -188,5 +188,48 @@ func TestFactoryRouter_Route_NotFound(t *testing.T) {
 	}
 	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_HTTP_NOT_FOUND {
 		t.Errorf("Expects err code is ERROR_HTTP_NOT_FOUND. Got %v", err)
+	}
+}
+
+func TestFactoryRouter_WithHook(t *testing.T) {
+	r := &FactoryRouter{routes: make([]Route, 0)}
+	r.Register("GET", "/test", nil).WithName("my_route")
+	r.WithHook(&routeHook{})
+	if route, ok := r.ByName("my_route"); ok == false || len(route.Hooks()) != 1 {
+		t.Errorf("Expects hook has been added. Got %d hooks", len(route.Hooks()))
+	}
+}
+
+func TestFactoryRouter_WithTag(t *testing.T) {
+	r := &FactoryRouter{routes: make([]Route, 0)}
+	r.Register("GET", "/test", nil).WithName("my_route")
+	r.WithTag("V2")
+	if route, ok := r.ByName("my_route"); ok == false || len(route.Tags()) != 1 {
+		t.Errorf("Expects tag has been added. Got %d tags", len(route.Tags()))
+	}
+}
+
+func TestFactoryRouter_routeIndex(t *testing.T) {
+	r := &FactoryRouter{routes: make([]Route, 0)}
+	r.Register("GET", "/test", nil).WithName("my_route")
+	i, ok := r.routeIndex("my_other_route")
+	if i != -1 || ok != false {
+		t.Errorf("Expects my_other_route is not found. Got %d", i)
+	}
+}
+
+func TestFactoryRouter_Copy(t *testing.T) {
+	r1 := &FactoryRouter{routes: make([]Route, 0)}
+	r2 := &FactoryRouter{routes: make([]Route, 0)}
+
+	r1.Register("Get", "/test", nil)
+	r2.Register("Post", "/test", nil)
+	if len(r1.routes) != 1 || len(r2.routes) != 1 {
+		t.Errorf("Expects number of routes is 1 for r1 and r2. Got %d and %d", len(r1.routes), len(r2.routes))
+	}
+
+	l := len(r1.Copy(r2).Routes())
+	if l != 2 {
+		t.Errorf("Expects r2's routes are copied to r1. Got %d routes", l)
 	}
 }

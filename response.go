@@ -60,14 +60,14 @@ type ResponseSender interface {
 	IsSent() bool
 }
 
-func NewResponse(w http.ResponseWriter) (Response, error) {
+func NewResponse(w http.ResponseWriter) Response {
 	return &FactoryResponse{
 		writer: w,
 		status: http.StatusOK,
 		header: NewHeader(),
 		isSent: false,
 		Body:   NewBody(),
-	}, nil
+	}
 }
 
 type FactoryResponse struct {
@@ -117,6 +117,10 @@ func (r *FactoryResponse) WithCookies(cookies []*http.Cookie) Response {
 }
 
 func (r *FactoryResponse) Send() error {
+	if r.writer == nil {
+		return NewSystemError(ERROR_NO_WRITER_FOUND, "No writer found")
+	}
+
 	if r.isSent {
 		return NewSystemError(ERROR_RESPONSE_ALREADY_SENT, "Response is already sent")
 	}

@@ -125,8 +125,15 @@ func TestFactoryRoute_WithHooks(t *testing.T) {
 	}
 }
 
+func TestFactoryRoute_WithHook(t *testing.T) {
+	r := &FactoryRoute{}
+	if len(r.WithHook(&routeHook{}).Hooks()) != 1 {
+		t.Errorf("Expects number of route's hooks is 1. Got %d", len(r.Hooks()))
+	}
+}
+
 func TestFactoryRoute_Match_HostEmpty(t *testing.T) {
-	req, _ := NewRequest(nil)
+	req := NewRequest(nil)
 	req.WithHost("domain.com").
 		WithUri("/test/abc")
 	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
@@ -139,7 +146,7 @@ func TestFactoryRoute_Match_HostEmpty(t *testing.T) {
 }
 
 func TestFactoryRoute_Match_HostNotEmpty(t *testing.T) {
-	req, _ := NewRequest(nil)
+	req := NewRequest(nil)
 	req.WithHost("en.domain.com").
 		WithUri("/test/55")
 	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
@@ -157,7 +164,7 @@ func TestFactoryRoute_Match_HostNotEmpty(t *testing.T) {
 }
 
 func TestFactoryRoute_Match_UriEmpty(t *testing.T) {
-	req, _ := NewRequest(nil)
+	req := NewRequest(nil)
 	req.WithHost("domain.com").
 		WithUri("/test/abc")
 	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
@@ -181,5 +188,65 @@ func TestFactoryRoute_Match_ZeroKeys(t *testing.T) {
 	}
 	if len(req.params.All()) > 0 {
 		t.Errorf("Expects no params in request")
+	}
+}
+
+type sampleRequestInput struct{}
+type sampleResponseOutput struct{}
+
+func TestFactoryRoute_RequestInput(t *testing.T) {
+	r := &FactoryRoute{}
+	r.requestInput = &sampleRequestInput{}
+	if r.RequestInput() == nil {
+		t.Errorf("Expects RequestInput is not nil")
+	}
+}
+
+func TestFactoryRoute_WithRequestInput(t *testing.T) {
+	r := &FactoryRoute{}
+	r.requestInput = &sampleRequestInput{}
+	if r.WithRequestInput(&sampleRequestInput{}).RequestInput() == nil {
+		t.Errorf("Expects RequestInput is not nil")
+	}
+}
+
+func TestFactoryRoute_ResponseOutput(t *testing.T) {
+	r := &FactoryRoute{}
+	r.responseOutput = &sampleResponseOutput{}
+	if r.ResponseOutput() == nil {
+		t.Errorf("Expects ResponseOutput is not nil")
+	}
+}
+
+func TestFactoryRoute_WithResponseOutput(t *testing.T) {
+	r := &FactoryRoute{}
+	r.responseOutput = &sampleResponseOutput{}
+	if r.WithResponseOutput(&sampleResponseOutput{}).ResponseOutput() == nil {
+		t.Errorf("Expects ResponseOutput is not nil")
+	}
+}
+
+func TestFactoryRoute_Tags(t *testing.T) {
+	r := &FactoryRoute{tags: make([]string, 0)}
+	if len(r.Tags()) != 0 {
+		t.Errorf("Expects number of tags is 0. Got %d", len(r.Tags()))
+	}
+	r.tags = append(r.tags, "a_tag")
+	if len(r.Tags()) != 1 {
+		t.Errorf("Expects number of tags is 1. Got %d", len(r.Tags()))
+	}
+}
+
+func TestFactoryRoute_WithTag(t *testing.T) {
+	r := &FactoryRoute{tags: make([]string, 0)}
+	if len(r.WithTag("a_tag").Tags()) != 1 {
+		t.Errorf("Expects number of tags is 1. Got %d", len(r.Tags()))
+	}
+}
+
+func TestFactoryRoute_WithTags(t *testing.T) {
+	r := &FactoryRoute{tags: make([]string, 0)}
+	if len(r.WithTags("a_tag", "another_tag").Tags()) != 2 {
+		t.Errorf("Expects number of tags is 2. Got %d", len(r.Tags()))
 	}
 }

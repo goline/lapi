@@ -99,20 +99,18 @@ type RequestParameter interface {
 	WithParam(key string, value interface{}) Request
 }
 
-func NewRequest(req *http.Request) (Request, error) {
+func NewRequest(req *http.Request) Request {
 	r := &FactoryRequest{
-		ancestor:    req,
-		cookies:     make(map[string]*http.Cookie),
-		params:      NewBag(),
-		header:      NewHeader(),
-		RequestBody: NewBody(),
+		ancestor: req,
+		cookies:  make(map[string]*http.Cookie),
+		params:   NewBag(),
+		header:   NewHeader(),
+		Body:     NewBody(),
 	}
 	if req != nil {
-		if err := r.parseRequest(); err != nil {
-			return nil, err
-		}
+		r.parseRequest()
 	}
-	return r, nil
+	return r
 }
 
 type FactoryRequest struct {
@@ -127,7 +125,7 @@ type FactoryRequest struct {
 	host     string
 	port     int
 	uri      string
-	RequestBody
+	Body
 }
 
 func (r *FactoryRequest) Ancestor() *http.Request {
@@ -230,29 +228,14 @@ func (r *FactoryRequest) WithParam(key string, value interface{}) Request {
 	return r
 }
 
-func (r *FactoryRequest) parseRequest() error {
+func (r *FactoryRequest) parseRequest() {
 	r.parseContentType()
-
-	var err error
-	err = r.parseRequestAddress()
-	if err != nil {
-		return err
-	}
-
-	err = r.parseRequestHeader()
-	if err != nil {
-		return err
-	}
-
-	err = r.parseCookies()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	r.parseRequestAddress()
+	r.parseRequestHeader()
+	r.parseCookies()
 }
 
-func (r *FactoryRequest) parseRequestAddress() error {
+func (r *FactoryRequest) parseRequestAddress() {
 	r.WithMethod(r.ancestor.Method)
 	r.WithHost(r.ancestor.URL.Hostname())
 	if p, _ := strconv.Atoi(r.ancestor.URL.Port()); p > 0 {
@@ -269,22 +252,16 @@ func (r *FactoryRequest) parseRequestAddress() error {
 			r.WithParam(k, v)
 		}
 	}
-	return nil
 }
 
-func (r *FactoryRequest) parseRequestHeader() error {
-	if r.header == nil {
-		r.header = NewHeader()
-	}
+func (r *FactoryRequest) parseRequestHeader() {
 	for key := range r.ancestor.Header {
 		r.Header().Set(key, r.ancestor.Header.Get(key))
 	}
-	return nil
 }
 
-func (r *FactoryRequest) parseCookies() error {
+func (r *FactoryRequest) parseCookies() {
 	r.WithCookies(r.ancestor.Cookies())
-	return nil
 }
 
 func (r *FactoryRequest) parseContentType() {
@@ -296,9 +273,10 @@ func (r *FactoryRequest) parseContentType() {
 		PanicOnError(err)
 		matches := reg.FindStringSubmatch(contentType)
 		switch len(matches) {
-		case 2:
-			r.WithContentType(matches[1]).WithCharset(CONTENT_CHARSET_DEFAULT)
 		case 4:
+			if matches[3] == "" {
+				matches[3] = CONTENT_CHARSET_DEFAULT
+			}
 			r.WithContentType(matches[1]).WithCharset(matches[3])
 		default:
 			r.WithContentType(CONTENT_TYPE_DEFAULT).WithCharset(CONTENT_CHARSET_DEFAULT)

@@ -7,7 +7,7 @@ import (
 
 func TestNewRequest(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://domain.com:8888/test/user?k1=v1&k2=v2#next", nil)
-	r, _ := NewRequest(req)
+	r := NewRequest(req)
 	if r == nil {
 		t.Errorf("Expects NewRequest to return an instance of Request. Got nil")
 	}
@@ -53,7 +53,7 @@ func TestFactoryRequest_WithRoute(t *testing.T) {
 func TestFactoryRequest_Header(t *testing.T) {
 	a, _ := http.NewRequest("GET", "/test", nil)
 	a.Header.Set("content-type", "application/json")
-	r := &FactoryRequest{header: NewHeader(), RequestBody: NewBody()}
+	r := &FactoryRequest{header: NewHeader(), Body: NewBody()}
 	r.ancestor = a
 	r.parseRequest()
 	if v, ok := r.Header().Get("Content-Type"); ok == false || v != "application/json" {
@@ -196,5 +196,26 @@ func TestFactoryRequest_WithUri(t *testing.T) {
 	r.WithUri("/test/user")
 	if r.uri != "/test/user" {
 		t.Errorf("Expects uri to be /test/user. Got %v", r.uri)
+	}
+}
+
+func TestFactoryRequest_ParseContentType(t *testing.T) {
+	r := &FactoryRequest{header: NewHeader(), Body: NewBody()}
+	r.header.Set(HEADER_CONTENT_TYPE, CONTENT_TYPE_XML)
+	r.parseContentType()
+	if r.ContentType() != CONTENT_TYPE_XML || r.Charset() == "" {
+		t.Errorf("Expects content type is CONTENT_TYPE_XML and charset is CONTENT_CHARSET_DEFAULT. Got %s, %s", r.ContentType(), r.Charset())
+	}
+
+	r.header.Set(HEADER_CONTENT_TYPE, "application/json; charset=UTF-8")
+	r.parseContentType()
+	if r.ContentType() != "application/json" || r.Charset() != "UTF-8" {
+		t.Errorf("Expects content type is application/json and charset is utf-8. Got %s, %s", r.ContentType(), r.Charset())
+	}
+
+	r.header.Set(HEADER_CONTENT_TYPE, "*invalid_content_type")
+	r.parseContentType()
+	if r.ContentType() != CONTENT_TYPE_DEFAULT || r.Charset() != CONTENT_CHARSET_DEFAULT {
+		t.Errorf("Expects content type is CONTENT_TYPE_DEFAULT and charset is CONTENT_CHARSET_DEFAULT. Got %s, %s", r.ContentType(), r.Charset())
 	}
 }

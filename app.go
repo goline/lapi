@@ -194,11 +194,8 @@ func (a *FactoryApp) forceSendResponse(connection Connection) {
 }
 
 func (a *FactoryApp) setUpConnection(w http.ResponseWriter, r *http.Request) Connection {
-	request, err := NewRequest(r)
-	PanicOnError(err)
-
-	response, err := NewResponse(w)
-	PanicOnError(err)
+	request := NewRequest(r)
+	response := NewResponse(w)
 
 	// let make request and response have same content-type and charset as default
 	response.WithContentType(request.ContentType()).WithCharset(request.Charset())
