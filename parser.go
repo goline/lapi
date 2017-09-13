@@ -1,5 +1,9 @@
 package lapi
 
+import (
+	"encoding/json"
+)
+
 type Parser interface {
 	// ContentType returns supported content-type
 	ContentType() string
@@ -35,4 +39,19 @@ func (pm *FactoryParserManager) Parser(contentType string) (Parser, bool) {
 func (pm *FactoryParserManager) WithParser(parser Parser) ParserManager {
 	pm.parsers[parser.ContentType()] = parser
 	return pm
+}
+
+type JsonParser struct {
+}
+
+func (p *JsonParser) ContentType() string {
+	return CONTENT_TYPE_JSON
+}
+
+func (p *JsonParser) Decode(data []byte, v interface{}) error {
+	return json.Unmarshal(data, v)
+}
+
+func (p *JsonParser) Encode(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
 }
