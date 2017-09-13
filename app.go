@@ -148,7 +148,7 @@ func (a *FactoryApp) handle() *FactoryApp {
 
 	http.Handle("/", a)
 	if c, ok := a.config.(ServerConfig); ok == true {
-		http.ListenAndServe(c.Address(), nil)
+		PanicOnError(http.ListenAndServe(c.Address(), nil))
 	} else {
 		panic(NewSystemError(ERROR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing")))
 	}
