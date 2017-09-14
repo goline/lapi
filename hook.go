@@ -39,3 +39,14 @@ func (h *SystemHook) TearDown(connection Connection, result interface{}, err err
 	connection.Response().WithContent(result)
 	return nil
 }
+
+type ParserHook struct{}
+
+func (h *ParserHook) SetUp(connection Connection) error {
+	connection.Response().WithParser(new(JsonParser))
+	return nil
+}
+
+func (h *ParserHook) TearDown(_ Connection, _ interface{}, _ error) error {
+	return nil
+}
