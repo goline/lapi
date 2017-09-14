@@ -3,7 +3,6 @@ package lapi
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/goline/lapi/parser"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -103,7 +102,7 @@ func TestFactoryResponse_Send(t *testing.T) {
 	h := func(w http.ResponseWriter, r *http.Request) {
 		rs := &FactoryResponse{writer: w, Body: NewBody(), header: NewHeader()}
 		rs.WithContentType(CONTENT_TYPE_JSON)
-		rs.WithParser(&parser.JsonParser{})
+		rs.WithParser(new(JsonParser))
 		rs.WithStatus(http.StatusInternalServerError)
 		rs.Header().Set("x-custom-flag", "1234")
 		c := make(map[string]interface{})

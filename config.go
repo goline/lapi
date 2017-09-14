@@ -5,11 +5,6 @@ import (
 	"time"
 )
 
-// Config contains configuration
-type Config interface {
-	Bag
-}
-
 // ServerConfig stores configuration of server
 type ServerConfig interface {
 	// Address returns a string of TCP address to listen on, ":http" if empty
@@ -56,11 +51,6 @@ type SecureServerConfig interface {
 
 	// WithTLSConfig sets TLSConfig
 	WithTLSConfig(config *tls.Config) SecureServerConfig
-}
-
-// NewConfig returns an instance of Config
-func NewConfig() Config {
-	return &FactoryConfig{Bag: NewBag()}
 }
 
 type FactoryConfig struct {

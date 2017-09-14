@@ -3,8 +3,6 @@ package lapi
 import (
 	"errors"
 	"testing"
-
-	"github.com/goline/lapi/parser"
 )
 
 func TestNewBody(t *testing.T) {
@@ -56,7 +54,7 @@ func TestFactoryBody_WithContent(t *testing.T) {
 		t.Errorf("Expects err is SystemError. Got %v", b.err)
 	}
 
-	b.WithParser(&parser.JsonParser{})
+	b.WithParser(new(JsonParser))
 	b.WithContentType(CONTENT_TYPE_JSON)
 	v := &sampleItem{Price: 5.67}
 	b.WithContent(v)
@@ -113,7 +111,7 @@ func TestFactoryBody_WithContentBytes(t *testing.T) {
 	}
 
 	v := &sampleItem{}
-	b.WithParser(&parser.JsonParser{})
+	b.WithParser(new(JsonParser))
 	b.WithContentType(CONTENT_TYPE_JSON)
 	b.WithContentBytes([]byte("{\"price\":5.67}"), v)
 	if b.err != nil {

@@ -4,7 +4,7 @@ var child = require('child_process');
 var chalk = require('chalk');
 
 var cmdTest = 'go test';
-var cmdVet = 'go tool vet */*.go';
+var cmdVet = 'go tool vet ./..';
 var files = ['**/*.go'];
 
 var logger = {

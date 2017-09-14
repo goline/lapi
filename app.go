@@ -10,8 +10,6 @@ type App interface {
 	AppLoader
 	AppRunner
 	AppRouter
-	AppConfigger
-	ContainerAware
 	AppRescuer
 }
 
@@ -19,15 +17,6 @@ type App interface {
 type AppLoader interface {
 	// WithLoader allows to register application's loader
 	WithLoader(loader Loader) App
-}
-
-// AppConfigger handles config
-type AppConfigger interface {
-	// Config returns instance of config
-	Config() Config
-
-	// WithConfig allows to set config
-	WithConfig(config Config) App
 }
 
 // AppRouter handles router
@@ -52,56 +41,26 @@ type AppRescuer interface {
 type AppRunner interface {
 	// Run brings application up
 	// Any errors should manage inside this method
-	Run()
+	Run(container Container, config interface{})
 }
 
 func NewApp() App {
 	return &FactoryApp{
-		config:    NewConfig(),
-		container: NewContainer(),
-		loaders:   make([]Loader, 0),
+		loaders: make([]Loader, 0),
 	}
 }
 
 type FactoryApp struct {
-	config    Config
+	config    interface{}
 	container Container
 	loaders   []Loader
-	request   Request
-	response  Response
 	router    Router
 	rescuer   Rescuer
-}
-
-func (a *FactoryApp) Container() Container {
-	return a.container
-}
-
-func (a *FactoryApp) WithContainer(container Container) ContainerAware {
-	a.container = container
-	return a
 }
 
 func (a *FactoryApp) WithLoader(loader Loader) App {
 	a.loaders = append(a.loaders, loader)
 	return a
-}
-
-func (a *FactoryApp) Config() Config {
-	return a.config
-}
-
-func (a *FactoryApp) WithConfig(config Config) App {
-	a.config = config
-	return a
-}
-
-func (a *FactoryApp) Request() Request {
-	return a.request
-}
-
-func (a *FactoryApp) Response() Response {
-	return a.response
 }
 
 func (a *FactoryApp) Router() Router {
@@ -126,7 +85,13 @@ func (a *FactoryApp) WithRescuer(handler Rescuer) App {
 	return a
 }
 
-func (a *FactoryApp) Run() {
+func (a *FactoryApp) Run(container Container, config interface{}) {
+	if container == nil || config == nil {
+		panic("App requires container and config to run")
+	}
+
+	a.container = container
+	a.config = config
 	a.setUp().handle()
 }
 
