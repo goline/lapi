@@ -47,6 +47,6 @@ func (h *ParserHook) SetUp(connection Connection) error {
 	return nil
 }
 
-func (h *ParserHook) TearDown(_ Connection, _ interface{}, _ error) error {
+func (h *ParserHook) TearDown(connection Connection, result interface{}, err error) error {
 	return nil
 }
