@@ -48,7 +48,6 @@ func NewApp() App {
 	return &FactoryApp{
 		loaders: make([]Loader, 0),
 		router:  NewRouter(),
-		rescuer: NewRescuer(),
 	}
 }
 
