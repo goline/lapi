@@ -102,6 +102,9 @@ func (a *FactoryApp) setUp() *FactoryApp {
 	for _, loader := range a.loaders {
 		loader.Load(a)
 	}
+	if a.rescuer == nil {
+		a.WithRescuer(NewRescuer())
+	}
 	PanicOnError(a.container.Inject(a.rescuer))
 	return a
 }
