@@ -53,8 +53,11 @@ type SecureServerConfig interface {
 	WithTLSConfig(config *tls.Config) SecureServerConfig
 }
 
+func NewConfig() *FactoryConfig {
+	return &FactoryConfig{}
+}
+
 type FactoryConfig struct {
-	Bag
 	address           string
 	readTimeout       time.Duration
 	writeTimeout      time.Duration
