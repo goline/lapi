@@ -6,14 +6,15 @@ import (
 )
 
 const (
-	BindErrorInvalidInterface         = 1
-	BindErrorInvalidConcrete          = 2
-	BindErrorNotImplementedInterface  = 3
-	ResolveErrorNotExistAbstract      = 4
-	ResolveErrorInvalidConcrete       = 5
-	ResolveErrorInsufficientArguments = 6
-	ResolveErrorNonValuesReturned     = 7
-	InjectErrorInvalidTargetType      = 8
+	BindErrorInvalidInterface         = 100
+	BindErrorInvalidConcrete          = 101
+	BindErrorNotImplementedInterface  = 103
+	BindErrorInvalidStruct            = 104
+	ResolveErrorNotExistAbstract      = 200
+	ResolveErrorInvalidConcrete       = 201
+	ResolveErrorInsufficientArguments = 203
+	ResolveErrorNonValuesReturned     = 204
+	InjectErrorInvalidTargetType      = 300
 )
 
 // Container acts as a dependency-injection manager
@@ -59,25 +60,7 @@ type FactoryContainer struct {
 }
 
 func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) SystemError {
-	at, err := c.interfaceOf(abstract)
-	if err != nil {
-		return err
-	}
-
-	ct := reflect.TypeOf(concrete)
-	switch ct.Kind() {
-	case reflect.Func:
-	case reflect.Ptr:
-		if c.instanceOf(at, ct) == false {
-			return NewSystemError(BindErrorNotImplementedInterface, fmt.Sprintf("%v is not an instance of %v", ct, at))
-		}
-	default:
-		return NewSystemError(BindErrorInvalidConcrete, fmt.Sprintf("Non-supported kind of concrete. Got %v", ct.Kind()))
-	}
-
-	cv := reflect.ValueOf(concrete)
-	c.items[at] = cv
-	return nil
+	return c.bindInterface(abstract, concrete)
 }
 
 func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (concrete interface{}, err SystemError) {
@@ -140,11 +123,56 @@ func (c *FactoryContainer) Inject(target interface{}) SystemError {
 	return nil
 }
 
+func (c *FactoryContainer) bindInterface(abstract interface{}, concrete interface{}) SystemError {
+	at, err := c.interfaceOf(abstract)
+	if err != nil {
+		return err
+	}
+
+	ct := reflect.TypeOf(concrete)
+	switch ct.Kind() {
+	case reflect.Func:
+	case reflect.Ptr:
+		if c.instanceOf(at, ct) == false {
+			return NewSystemError(BindErrorNotImplementedInterface, fmt.Sprintf("%v is not an instance of %v", ct, at))
+		}
+	default:
+		return NewSystemError(BindErrorInvalidConcrete, fmt.Sprintf("Non-supported kind of concrete. Got %v", ct.Kind()))
+	}
+
+	cv := reflect.ValueOf(concrete)
+	c.items[at] = cv
+	return nil
+}
+
+func (c *FactoryContainer) bindStruct() SystemError {
+	return nil
+}
+
+func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, SystemError) {
+	if t, ok := value.(reflect.Type); ok == true && t.Kind() == reflect.Struct {
+		return t, nil
+	}
+	t := reflect.TypeOf(value)
+
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		if t.Kind() == reflect.Struct {
+			break
+		}
+	}
+
+	if t.Kind() != reflect.Interface {
+		return nil, NewSystemError(BindErrorInvalidStruct, "Called structOf with a value that is not a pointer to a struct. (*MyStruct)(nil)")
+	}
+
+	return t, nil
+}
+
 func (c *FactoryContainer) interfaceOf(value interface{}) (reflect.Type, SystemError) {
 	if t, ok := value.(reflect.Type); ok == true && t.Kind() == reflect.Interface {
 		return t, nil
 	}
-
 	t := reflect.TypeOf(value)
 
 	for t.Kind() == reflect.Ptr {
