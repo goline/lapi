@@ -10,10 +10,13 @@ const (
 	BindErrorInvalidConcrete          = 101
 	BindErrorNotImplementedInterface  = 103
 	BindErrorInvalidStruct            = 104
+	BindErrorInvalidStructConcrete    = 105
+	BindErrorInvalidArguments         = 106
 	ResolveErrorNotExistAbstract      = 200
 	ResolveErrorInvalidConcrete       = 201
 	ResolveErrorInsufficientArguments = 203
 	ResolveErrorNonValuesReturned     = 204
+	ResolveErrorInvalidArguments      = 205
 	InjectErrorInvalidTargetType      = 300
 )
 
@@ -60,28 +63,31 @@ type FactoryContainer struct {
 }
 
 func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) SystemError {
-	return c.bindInterface(abstract, concrete)
+	at, isInterface := c.interfaceOf(abstract)
+	if isInterface == nil {
+		return c.bindInterface(at, concrete)
+	}
+
+	at, isStruct := c.structOf(abstract)
+	if isStruct == nil {
+		return c.bindStruct(at, concrete)
+	}
+
+	return NewSystemError(BindErrorInvalidArguments, "Binding error! Invalid arguments.")
 }
 
 func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (concrete interface{}, err SystemError) {
-	at, err := c.interfaceOf(abstract)
-	if err != nil {
-		return nil, err
+	at, isInterface := c.interfaceOf(abstract)
+	if isInterface == nil {
+		return c.resolveInterface(at, args...)
 	}
 
-	value, ok := c.items[at]
-	if ok == false {
-		return nil, NewSystemError(ResolveErrorNotExistAbstract, fmt.Sprintf("%v is not bound yet", at))
+	at, isStruct := c.structOf(abstract)
+	if isStruct == nil {
+		return c.resolveStruct(at, args...)
 	}
 
-	switch value.Kind() {
-	case reflect.Func:
-		return c.resolveFunc(value, args...)
-	case reflect.Ptr:
-		return value.Interface(), nil
-	default:
-		return nil, NewSystemError(ResolveErrorInvalidConcrete, fmt.Sprintf("Type %v is not supported", value.Kind()))
-	}
+	return nil, NewSystemError(ResolveErrorInvalidArguments, "Resolving error! Invalid arguments.")
 }
 
 func (c *FactoryContainer) Inject(target interface{}) SystemError {
@@ -104,7 +110,7 @@ func (c *FactoryContainer) Inject(target interface{}) SystemError {
 			continue
 		}
 
-		if sf.Type.Kind() != reflect.Interface {
+		if sf.Type.Kind() != reflect.Interface && sf.Type.Kind() != reflect.Struct {
 			continue
 		}
 
@@ -123,12 +129,7 @@ func (c *FactoryContainer) Inject(target interface{}) SystemError {
 	return nil
 }
 
-func (c *FactoryContainer) bindInterface(abstract interface{}, concrete interface{}) SystemError {
-	at, err := c.interfaceOf(abstract)
-	if err != nil {
-		return err
-	}
-
+func (c *FactoryContainer) bindInterface(at reflect.Type, concrete interface{}) SystemError {
 	ct := reflect.TypeOf(concrete)
 	switch ct.Kind() {
 	case reflect.Func:
@@ -140,13 +141,47 @@ func (c *FactoryContainer) bindInterface(abstract interface{}, concrete interfac
 		return NewSystemError(BindErrorInvalidConcrete, fmt.Sprintf("Non-supported kind of concrete. Got %v", ct.Kind()))
 	}
 
-	cv := reflect.ValueOf(concrete)
-	c.items[at] = cv
+	c.items[at] = reflect.ValueOf(concrete)
 	return nil
 }
 
-func (c *FactoryContainer) bindStruct() SystemError {
+func (c *FactoryContainer) bindStruct(at reflect.Type, concrete interface{}) SystemError {
+	ct, err := c.structOf(concrete)
+	if err != nil {
+		return err
+	}
+
+	if at.String() != ct.String() {
+		return NewSystemError(BindErrorInvalidStructConcrete, fmt.Sprintf("Expects %s. Got %s", at.String(), ct.String()))
+	}
+
+	c.items[at] = reflect.ValueOf(concrete)
 	return nil
+}
+
+func (c *FactoryContainer) resolveInterface(at reflect.Type, args ...interface{}) (concrete interface{}, err SystemError) {
+	value, ok := c.items[at]
+	if ok == false {
+		return nil, NewSystemError(ResolveErrorNotExistAbstract, fmt.Sprintf("%v is not bound yet", at))
+	}
+
+	switch value.Kind() {
+	case reflect.Func:
+		return c.resolveFunc(value, args...)
+	case reflect.Ptr:
+		return value.Interface(), nil
+	default:
+		return nil, NewSystemError(ResolveErrorInvalidConcrete, fmt.Sprintf("Type %v is not supported", value.Kind()))
+	}
+}
+
+func (c *FactoryContainer) resolveStruct(at reflect.Type, args ...interface{}) (concrete interface{}, err SystemError) {
+	value, ok := c.items[at]
+	if ok == false {
+		return nil, NewSystemError(ResolveErrorNotExistAbstract, fmt.Sprintf("%v is not bound yet", at))
+	}
+
+	return value.Elem().Interface(), nil
 }
 
 func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, SystemError) {
@@ -157,12 +192,9 @@ func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, SystemErro
 
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
-		if t.Kind() == reflect.Struct {
-			break
-		}
 	}
 
-	if t.Kind() != reflect.Interface {
+	if t.Kind() != reflect.Struct {
 		return nil, NewSystemError(BindErrorInvalidStruct, "Called structOf with a value that is not a pointer to a struct. (*MyStruct)(nil)")
 	}
 

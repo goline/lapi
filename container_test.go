@@ -13,14 +13,13 @@ func TestNewContainer(t *testing.T) {
 	}
 }
 
-func TestFactoryContainer_Bind_ErrorAbstractIsNotAnInterface(t *testing.T) {
+func TestFactoryContainer_Bind_ErrorAbstractIsNotAnInterfaceOrStruct(t *testing.T) {
 	c := NewContainer()
-	err := c.Bind(&FactoryBag{}, &FactoryError{})
+	err := c.Bind("string", &FactoryError{})
 	if err == nil {
 		t.Errorf("Expects err is not nil")
-	}
-	if err.Code() != BindErrorInvalidInterface {
-		t.Errorf("Expects BindErrorInvalidInterface. Got %v", err.Code())
+	} else if err.Code() != BindErrorInvalidArguments {
+		t.Errorf("Expects BindErrorInvalidArguments. Got %v", err.Code())
 	}
 }
 
@@ -48,6 +47,42 @@ func TestFactoryContainer_Bind_ErrorNotSupportAbstractType(t *testing.T) {
 		if err.Code() != BindErrorInvalidConcrete {
 			t.Errorf("Expects BindErrorInvalidConcrete code. Got %v", err.Code())
 		}
+	}
+}
+
+func TestFactoryContainer_Bind_StructOk(t *testing.T) {
+	c := NewContainer()
+	err := c.Bind(FactoryBag{}, &FactoryBag{})
+	if err != nil {
+		t.Errorf("Expects err is nil. Got %v", err)
+	}
+}
+
+func TestFactoryContainer_Bind_Struct_BindErrorInvalidStruct(t *testing.T) {
+	c := NewContainer()
+	err := c.Bind(FactoryBag{}, "not_a_struct")
+	if err == nil {
+		t.Errorf("Expects err is not nil")
+	} else if err.Code() != BindErrorInvalidStruct {
+		t.Errorf("Expects BindErrorInvalidStruct. Got %d", err.Code())
+	}
+}
+
+func TestFactoryContainer_Bind_Struct_BindErrorInvalidStructConcrete(t *testing.T) {
+	c := NewContainer()
+	err := c.Bind(FactoryBag{}, &FactoryError{})
+	if err == nil {
+		t.Errorf("Expects err is not nil")
+	} else if err.Code() != BindErrorInvalidStructConcrete {
+		t.Errorf("Expects BindErrorInvalidStructConcrete. Got %d", err.Code())
+	}
+}
+
+func TestFactoryContainer_Bind_Struct_StructOf(t *testing.T) {
+	c := &FactoryContainer{}
+	_, err := c.structOf(reflect.TypeOf(FactoryBag{}))
+	if err != nil {
+		t.Errorf("Expects err is nil")
 	}
 }
 
@@ -147,6 +182,26 @@ func TestFactoryContainer_Resolve_Ptr_Ok(t *testing.T) {
 	}
 	if er.Code() != "my_code" {
 		t.Errorf("Expects error's code is my_code")
+	}
+}
+
+func TestFactoryContainer_Resolve_Struct(t *testing.T) {
+	c := NewContainer()
+	c.Bind(FactoryBag{}, NewBag())
+	v, err := c.Resolve(FactoryBag{})
+	if err != nil {
+		t.Errorf("Expects err is nil. Got %v", err)
+	}
+	if v == nil {
+		t.Errorf("Expects v is not nil")
+	}
+}
+
+func TestFactoryContainer_Resolve_ResolveErrorInvalidArguments(t *testing.T) {
+	c := NewContainer()
+	_, err := c.Resolve("string")
+	if err == nil {
+		t.Errorf("Expects err is not nil")
 	}
 }
 
