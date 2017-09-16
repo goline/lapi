@@ -11,6 +11,7 @@ type App interface {
 	AppRunner
 	AppRouter
 	AppRescuer
+	ContainerAware
 }
 
 // AppLoader handles application's loader
@@ -83,6 +84,15 @@ func (a *FactoryApp) Rescuer() Rescuer {
 
 func (a *FactoryApp) WithRescuer(handler Rescuer) App {
 	a.rescuer = handler
+	return a
+}
+
+func (a *FactoryApp) Container() Container {
+	return a.container
+}
+
+func (a *FactoryApp) WithContainer(container Container) ContainerAware {
+	a.container = container
 	return a
 }
 
