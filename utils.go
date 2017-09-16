@@ -5,3 +5,9 @@ func PanicOnError(err error) {
 		panic(err)
 	}
 }
+
+func Must(errors ...error) {
+	for _, err := range errors {
+		PanicOnError(err)
+	}
+}
