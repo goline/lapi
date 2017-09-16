@@ -1,10 +1,10 @@
 package lapi
 
 const (
-	LOG_ERROR = 0
-	LOG_INFO  = 1
-	LOG_DEBUG = 2
-	LOG_WARN  = 3
+	LOG_ERROR = "ERROR"
+	LOG_INFO  = "INFO"
+	LOG_DEBUG = "DEBUG"
+	LOG_WARN  = "WARN"
 )
 
 // Logger controls log
@@ -15,7 +15,7 @@ type Logger interface {
 
 type LogWriter interface {
 	// Write logs a message
-	Write(level uint8, message string, args ...interface{}) error
+	Write(level string, message string, args ...interface{}) error
 }
 
 type LogLeveler interface {
