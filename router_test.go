@@ -233,3 +233,11 @@ func TestFactoryRouter_Copy(t *testing.T) {
 		t.Errorf("Expects r2's routes are copied to r1. Got %d routes", l)
 	}
 }
+
+func TestFactoryRouter_WithRoute(t *testing.T) {
+	r := &FactoryRouter{routes: make([]Route, 0)}
+	r.WithRoute(NewRoute("GET", "/test", nil))
+	if len(r.routes) != 1 {
+		t.Errorf("Expects router has 1 route. Got %d", len(r.routes))
+	}
+}

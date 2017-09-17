@@ -47,6 +47,9 @@ type RouteInformer interface {
 type RouteRegister interface {
 	// Register enrolls a http route handler
 	Register(method string, uri string, handler Handler) Route
+
+	// WithRoute registers a route
+	WithRoute(route Route) Router
 }
 
 // RouteGrouper groups sub routes
@@ -152,6 +155,11 @@ func (r *FactoryRouter) Register(method string, uri string, handler Handler) Rou
 		r.routes = append(r.routes, route)
 		return route
 	}
+}
+
+func (r *FactoryRouter) WithRoute(route Route) Router {
+	r.routes = append(r.routes, route)
+	return r
 }
 
 func (r *FactoryRouter) Group(prefix string) Router {
