@@ -291,11 +291,16 @@ func (r *FactoryRoute) matchUri(uri string) bool {
 }
 
 func (r *FactoryRoute) modifyRequestOnMatch(request Request, pv *patternVerifier, s string) {
-	if len(pv.keys) == 0 {
+	numKeys := len(pv.keys)
+	if numKeys == 0 {
 		return
 	}
 
 	m := pv.reg.FindStringSubmatch(s)
+	numMatches := len(m)
+	if numKeys+1 != numMatches {
+		return
+	}
 	for i, key := range pv.keys {
 		request.WithParam(key, m[i+1])
 	}

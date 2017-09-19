@@ -250,3 +250,35 @@ func TestFactoryRoute_WithTags(t *testing.T) {
 		t.Errorf("Expects number of tags is 2. Got %d", len(r.Tags()))
 	}
 }
+
+func TestFactoryRoute_Match_NoParamsRequest(t *testing.T) {
+	req := &FactoryRequest{params: NewBag()}
+	req.WithUri("/v1/user")
+	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+	r.WithUri("/.*")
+
+	_, ok := r.Match(req)
+	if ok == false {
+		t.Errorf("Expects ok to be true")
+	}
+
+	if len(req.params.All()) > 0 {
+		t.Errorf("Expects no params in request")
+	}
+}
+
+func TestFactoryRoute_Match_NotEnoughParameters(t *testing.T) {
+	req := &FactoryRequest{params: NewBag()}
+	req.WithUri("/v1/user")
+	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+	r.WithUri("/{uri:.*}")
+
+	_, ok := r.Match(req)
+	if ok == false {
+		t.Errorf("Expects ok to be true")
+	}
+
+	if len(req.params.All()) > 0 {
+		t.Errorf("Expects no params in request")
+	}
+}
