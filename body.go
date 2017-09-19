@@ -80,6 +80,10 @@ func (b *FactoryBody) ContentBytes() ([]byte, error) {
 
 func (b *FactoryBody) WithContentBytes(bytes []byte, v interface{}) Body {
 	b.reset()
+	if v == nil && b.contentType == "" {
+		b.contentBytes = bytes
+		return b
+	}
 
 	p, ok := b.Parser(b.contentType)
 	if ok == true {

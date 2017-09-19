@@ -103,11 +103,14 @@ func TestFactoryBody_ContentBytes(t *testing.T) {
 func TestFactoryBody_WithContentBytes(t *testing.T) {
 	b := &FactoryBody{ParserManager: NewParserManager()}
 	b.WithContentBytes([]byte("a_string"), nil)
+	if b.err != nil || b.contentBytes == nil || b.content != nil {
+		t.Errorf("Expects content is set correctly")
+	}
+
+	b.WithContentType(CONTENT_TYPE_XML)
+	b.WithContentBytes([]byte("a_string"), nil)
 	if b.err == nil {
 		t.Errorf("Expects err is not nil")
-	}
-	if e, ok := b.err.(SystemError); ok == false || e.Code() != ERROR_NO_PARSER_FOUND {
-		t.Errorf("Expects err is SystemError. Got %v", b.err)
 	}
 
 	v := &sampleItem{}
