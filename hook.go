@@ -36,6 +36,10 @@ func (h *SystemHook) TearDown(connection Connection, result interface{}, err err
 		return err
 	}
 
+	if result == nil {
+		return nil
+	}
+
 	connection.Response().WithContent(result)
 	return nil
 }
