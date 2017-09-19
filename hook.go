@@ -21,9 +21,9 @@ type SystemHook struct{}
 
 func (h *SystemHook) SetUp(connection Connection) error {
 	request := connection.Request()
-	if request.Method() != http.MethodPost ||
-		request.Method() != http.MethodPut ||
-		request.Method() != http.MethodPatch ||
+	if (request.Method() != http.MethodPost &&
+		request.Method() != http.MethodPut &&
+		request.Method() != http.MethodPatch) ||
 		request.Route().RequestInput() == nil ||
 		request.Ancestor().Body == nil {
 		return nil

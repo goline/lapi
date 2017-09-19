@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Request represents for an application's request
@@ -146,7 +147,7 @@ func (r *FactoryRequest) Method() string {
 }
 
 func (r *FactoryRequest) WithMethod(method string) Request {
-	r.method = method
+	r.method = strings.ToUpper(method)
 	return r
 }
 
