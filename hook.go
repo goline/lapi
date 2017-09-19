@@ -1,6 +1,9 @@
 package lapi
 
-import "io/ioutil"
+import (
+	"io/ioutil"
+	"net/http"
+)
 
 // Hook acts as a middleware of processing request
 type Hook interface {
@@ -18,7 +21,11 @@ type SystemHook struct{}
 
 func (h *SystemHook) SetUp(connection Connection) error {
 	request := connection.Request()
-	if request.Ancestor().Body == nil {
+	if request.Method() != http.MethodPost ||
+		request.Method() != http.MethodPut ||
+		request.Method() != http.MethodPatch ||
+		request.Route().RequestInput() == nil ||
+		request.Ancestor().Body == nil {
 		return nil
 	}
 
