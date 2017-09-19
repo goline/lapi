@@ -21,23 +21,23 @@ type ErrorResponse struct {
 
 type FactoryRescuer struct{}
 
-func (h *FactoryRescuer) Rescue(connection Connection, err error) error {
+func (r *FactoryRescuer) Rescue(connection Connection, err error) error {
 	if connection == nil {
 		return err
 	}
 	switch e := err.(type) {
 	case SystemError:
-		h.handleSystemError(connection, e)
+		r.handleSystemError(connection, e)
 	case StackError:
-		h.handleStackError(connection, e)
+		r.handleStackError(connection, e)
 	default:
-		h.handleUnknownError(connection, e)
+		r.handleUnknownError(connection, e)
 	}
 
 	return nil
 }
 
-func (h *FactoryRescuer) handleSystemError(c Connection, err SystemError) {
+func (r *FactoryRescuer) handleSystemError(c Connection, err SystemError) {
 	switch err.Code() {
 	case ERROR_HTTP_NOT_FOUND:
 		c.Response().WithStatus(http.StatusNotFound).
@@ -51,11 +51,11 @@ func (h *FactoryRescuer) handleSystemError(c Connection, err SystemError) {
 	}
 }
 
-func (h *FactoryRescuer) handleStackError(c Connection, err StackError) {
+func (r *FactoryRescuer) handleStackError(c Connection, err StackError) {
 	c.Response().WithStatus(err.Status()).WithContent(&ErrorResponse{"", err.Error()})
 }
 
-func (h *FactoryRescuer) handleUnknownError(c Connection, err error) {
+func (r *FactoryRescuer) handleUnknownError(c Connection, err error) {
 	if e, ok := err.(ErrorStatus); ok == true {
 		c.Response().WithStatus(e.Status())
 	} else {
