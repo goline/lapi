@@ -1,14 +1,14 @@
 package lapi
 
 import (
+	"errors"
 	"fmt"
-	"net/http"
 )
 
 // Validator helps validate inputs
 type Validator interface {
 	// Validate checks input against rules
-	Validate(input Bag, rules Rules) (bool, StackError)
+	Validate(input Bag, rules Rules) error
 }
 
 func NewValidator() Validator {
@@ -17,40 +17,26 @@ func NewValidator() Validator {
 
 type FactoryValidator struct{}
 
-func (v *FactoryValidator) Validate(input Bag, rules Rules) (bool, StackError) {
-	errors := make([]Error, 0)
+func (v *FactoryValidator) Validate(input Bag, rules Rules) error {
 	for key, value := range input.All() {
 		checks := rules.Get(key)
 		if len(checks) == 0 {
 			continue
 		}
 		for _, checker := range checks {
-			if checker.Check(value) == false {
-				errors = append(errors, NewError("", fmt.Sprintf(checker.Message(), key), nil))
+			if err := checker.Check(value); err != nil {
+				return errors.New(fmt.Sprintf("%s: %s", key, err.Error()))
 			}
 		}
 	}
 
-	if len(errors) > 0 {
-		return false, NewStackError(http.StatusBadRequest, errors)
-	}
-
-	return true, nil
+	return nil
 }
 
 // Checker validates input
 type Checker interface {
 	// Check verifies value
-	Check(value interface{}) bool
-	ErrorMessager
-}
-
-// Skipper allows to skip
-// Any Checker (or other) which might takes time to process
-// should implement this interface
-type Skipper interface {
-	// Skip returns true if we should skip
-	Skip() bool
+	Check(value interface{}) error
 }
 
 // Rules manages validation rules
