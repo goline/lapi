@@ -14,11 +14,7 @@ func NewRescuer() Rescuer {
 	return &FactoryRescuer{}
 }
 
-type errorStackResponse struct {
-	Errors []errorItemResponse `json:"errors"`
-}
-
-type errorItemResponse struct {
+type ErrorResponse struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
@@ -45,18 +41,18 @@ func (h *FactoryRescuer) handleSystemError(c Connection, err SystemError) {
 	switch err.Code() {
 	case ERROR_HTTP_NOT_FOUND:
 		c.Response().WithStatus(http.StatusNotFound).
-			WithContent(h.getResponseContentForErrors(NewError("ERROR_HTTP_NOT_FOUND", http.StatusText(http.StatusNotFound), nil)))
+			WithContent(&ErrorResponse{"ERROR_HTTP_NOT_FOUND", http.StatusText(http.StatusNotFound)})
 	case ERROR_HTTP_BAD_REQUEST:
 		c.Response().WithStatus(http.StatusBadRequest).
-			WithContent(h.getResponseContentForErrors(NewError("ERROR_HTTP_BAD_REQUEST", http.StatusText(http.StatusBadRequest), nil)))
+			WithContent(&ErrorResponse{"ERROR_HTTP_BAD_REQUEST", http.StatusText(http.StatusBadRequest)})
 	default:
 		c.Response().WithStatus(http.StatusInternalServerError).
-			WithContent(h.getResponseContentForErrors(NewError("", err.Error(), nil)))
+			WithContent(&ErrorResponse{"ERROR_INTERNAL_SERVER_ERROR", err.Error()})
 	}
 }
 
 func (h *FactoryRescuer) handleStackError(c Connection, err StackError) {
-	c.Response().WithStatus(err.Status()).WithContent(h.getResponseContentForErrors(err.Errors()...))
+	c.Response().WithStatus(err.Status()).WithContent(&ErrorResponse{"", err.Error()})
 }
 
 func (h *FactoryRescuer) handleUnknownError(c Connection, err error) {
@@ -69,13 +65,5 @@ func (h *FactoryRescuer) handleUnknownError(c Connection, err error) {
 	if e, ok := err.(ErrorCoder); ok == true {
 		code = e.Code()
 	}
-	c.Response().WithContent(h.getResponseContentForErrors(NewError(code, err.Error(), err)))
-}
-
-func (h *FactoryRescuer) getResponseContentForErrors(errors ...Error) *errorStackResponse {
-	ei := make([]errorItemResponse, len(errors))
-	for i, e := range errors {
-		ei[i] = errorItemResponse{e.Code(), e.Message()}
-	}
-	return &errorStackResponse{ei}
+	c.Response().WithContent(&ErrorResponse{code, err.Error()})
 }
