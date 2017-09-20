@@ -165,6 +165,8 @@ func (a *FactoryApp) forceSendResponse(connection Connection) {
 	if r := recover(); r != nil {
 		if err, ok := r.(error); ok == true {
 			a.rescuer.Rescue(connection, err)
+		} else {
+			fmt.Println(r)
 		}
 	}
 	if connection.Response().IsSent() == false {
