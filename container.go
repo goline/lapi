@@ -181,12 +181,8 @@ func (c *FactoryContainer) resolveStruct(at reflect.Type, args ...interface{}) (
 	if ok == false {
 		return nil, NewSystemError(ResolveErrorNotExistAbstract, fmt.Sprintf("%v is not bound yet", at))
 	}
-	switch value.Kind() {
-	case reflect.Ptr:
-		return value.Interface(), nil
-	default:
-		return value.Elem().Interface(), nil
-	}
+
+	return value.Elem().Interface(), nil
 }
 
 func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, SystemError) {
