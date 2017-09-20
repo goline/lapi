@@ -21,6 +21,7 @@ const (
 
 	CONTENT_TYPE_JSON       = "application/json"
 	CONTENT_TYPE_XML        = "application/xml"
+	CONTENT_TYPE_TEXT       = "text/plain"
 	CONTENT_TYPE_DEFAULT    = CONTENT_TYPE_JSON
 	CONTENT_CHARSET_DEFAULT = "utf-8"
 )

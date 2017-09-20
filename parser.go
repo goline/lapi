@@ -41,8 +41,7 @@ func (pm *FactoryParserManager) WithParser(parser Parser) ParserManager {
 	return pm
 }
 
-type JsonParser struct {
-}
+type JsonParser struct{}
 
 func (p *JsonParser) ContentType() string {
 	return CONTENT_TYPE_JSON
@@ -54,4 +53,19 @@ func (p *JsonParser) Decode(data []byte, v interface{}) error {
 
 func (p *JsonParser) Encode(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
+}
+
+type TextParser struct{}
+
+func (p *TextParser) ContentType() string {
+	return CONTENT_TYPE_TEXT
+}
+
+func (p *TextParser) Decode(data []byte, v interface{}) error {
+	v = string(data)
+	return nil
+}
+
+func (p *TextParser) Encode(v interface{}) ([]byte, error) {
+	return []byte(v), nil
 }
