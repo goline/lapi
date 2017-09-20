@@ -191,11 +191,11 @@ func (c *FactoryContainer) resolveStruct(at reflect.Type, args ...interface{}) (
 }
 
 func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, SystemError) {
-	if t, ok := value.(reflect.Type); ok == true && t.Kind() == reflect.Struct {
-		return t, nil
+	if t, ok := value.(reflect.Type); ok == true {
+		return c.structOfType(t)
 	}
-	t := reflect.TypeOf(value)
 
+	t := reflect.TypeOf(value)
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -205,6 +205,17 @@ func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, SystemErro
 	}
 
 	return t, nil
+}
+
+func (c *FactoryContainer) structOfType(t reflect.Type) (reflect.Type, SystemError) {
+	switch t.Kind() {
+	case reflect.Struct:
+		return t, nil
+	case reflect.Ptr:
+		return t.Elem(), nil
+	default:
+		return nil, NewSystemError(BindErrorInvalidStruct, "Called structOfType with a value that is not a pointer to a struct. (*MyStruct)(nil)")
+	}
 }
 
 func (c *FactoryContainer) interfaceOf(value interface{}) (reflect.Type, SystemError) {
