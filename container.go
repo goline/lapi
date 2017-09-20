@@ -110,7 +110,8 @@ func (c *FactoryContainer) Inject(target interface{}) SystemError {
 			continue
 		}
 
-		if sf.Type.Kind() != reflect.Interface && sf.Type.Kind() != reflect.Struct {
+		if sf.Type.Kind() != reflect.Interface &&
+			sf.Type.Kind() != reflect.Struct && sf.Type.Kind() != reflect.Ptr {
 			continue
 		}
 
