@@ -87,7 +87,7 @@ func TestFactoryContainer_Bind_Struct_StructOf(t *testing.T) {
 }
 
 func TestFactoryContainer_Resolve_ErrorAbstractNotAnInterface(t *testing.T) {
-	c := &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	c := &FactoryContainer{make(map[string]reflect.Value)}
 	_, err := c.Resolve(&FactoryBag{})
 	if err == nil {
 		t.Errorf("Expects err is not nil")
@@ -95,7 +95,7 @@ func TestFactoryContainer_Resolve_ErrorAbstractNotAnInterface(t *testing.T) {
 }
 
 func TestFactoryContainer_Resolve_ErrorInvalidConcreteType(t *testing.T) {
-	c := &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	c := &FactoryContainer{make(map[string]reflect.Value)}
 	c.Bind((*Bag)(nil), NewBag())
 	for k := range c.items {
 		c.items[k] = reflect.ValueOf("a_string")
@@ -311,7 +311,7 @@ func TestFactoryContainer_Inject_Recursive_Ok(t *testing.T) {
 }
 
 func TestFactoryContainer_Private_InstanceOf_AbstractNotAnInterface(t *testing.T) {
-	c := &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	c := &FactoryContainer{make(map[string]reflect.Value)}
 	v := c.instanceOf(reflect.TypeOf("a_string"), reflect.TypeOf((*Bag)(nil)))
 	if v != false {
 		t.Errorf("Expects v is false. Got %v", v)
@@ -319,7 +319,7 @@ func TestFactoryContainer_Private_InstanceOf_AbstractNotAnInterface(t *testing.T
 }
 
 func TestFactoryContainer_Private_InstanceOf_ConcreteTypeNotSupport(t *testing.T) {
-	c := &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	c := &FactoryContainer{make(map[string]reflect.Value)}
 	i, _ := c.interfaceOf((*Bag)(nil))
 	v := c.instanceOf(i, reflect.TypeOf("a_string"))
 	if v != false {

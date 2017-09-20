@@ -55,11 +55,11 @@ type ContainerAware interface {
 }
 
 func NewContainer() Container {
-	return &FactoryContainer{make(map[reflect.Type]reflect.Value)}
+	return &FactoryContainer{make(map[string]reflect.Value)}
 }
 
 type FactoryContainer struct {
-	items map[reflect.Type]reflect.Value
+	items map[string]reflect.Value
 }
 
 func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) SystemError {
@@ -142,7 +142,7 @@ func (c *FactoryContainer) bindInterface(at reflect.Type, concrete interface{}) 
 		return NewSystemError(BindErrorInvalidConcrete, fmt.Sprintf("Non-supported kind of concrete. Got %v", ct.Kind()))
 	}
 
-	c.items[at] = reflect.ValueOf(concrete)
+	c.items[at.String()] = reflect.ValueOf(concrete)
 	return nil
 }
 
@@ -156,12 +156,12 @@ func (c *FactoryContainer) bindStruct(at reflect.Type, concrete interface{}) Sys
 		return NewSystemError(BindErrorInvalidStructConcrete, fmt.Sprintf("Expects %s. Got %s", at.String(), ct.String()))
 	}
 
-	c.items[at] = reflect.ValueOf(concrete)
+	c.items[at.String()] = reflect.ValueOf(concrete)
 	return nil
 }
 
 func (c *FactoryContainer) resolveInterface(at reflect.Type, args ...interface{}) (concrete interface{}, err SystemError) {
-	value, ok := c.items[at]
+	value, ok := c.items[at.String()]
 	if ok == false {
 		return nil, NewSystemError(ResolveErrorNotExistAbstract, fmt.Sprintf("%v is not bound yet", at))
 	}
@@ -177,12 +177,17 @@ func (c *FactoryContainer) resolveInterface(at reflect.Type, args ...interface{}
 }
 
 func (c *FactoryContainer) resolveStruct(at reflect.Type, args ...interface{}) (concrete interface{}, err SystemError) {
-	value, ok := c.items[at]
+	value, ok := c.items[at.String()]
 	if ok == false {
 		return nil, NewSystemError(ResolveErrorNotExistAbstract, fmt.Sprintf("%v is not bound yet", at))
 	}
 
-	return value.Elem().Interface(), nil
+	switch value.Kind() {
+	case reflect.Struct, reflect.Ptr:
+		return value.Interface(), nil
+	default:
+		return nil, NewSystemError(ResolveErrorInvalidConcrete, fmt.Sprintf("Type %v is not supported", value.Kind()))
+	}
 }
 
 func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, SystemError) {
