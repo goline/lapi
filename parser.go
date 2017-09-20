@@ -2,6 +2,7 @@ package lapi
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type Parser interface {
@@ -67,5 +68,9 @@ func (p *TextParser) Decode(data []byte, v interface{}) error {
 }
 
 func (p *TextParser) Encode(v interface{}) ([]byte, error) {
-	return []byte(v), nil
+	if s, ok := v.(string); ok == true {
+		return []byte(s), nil
+	}
+
+	return nil, NewSystemError(ERROR_PARSE_INVALID_CONTENT, fmt.Sprintf("Unable to convert %T to []byte", v))
 }
