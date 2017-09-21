@@ -165,11 +165,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (a *FactoryApp) forceSendResponse(connection Connection) {
 	if r := recover(); r != nil {
-		if err, ok := r.(error); ok == true {
-			a.rescuer.Rescue(connection, err)
-		} else {
-			fmt.Println(r)
-		}
+		PanicOnError(a.rescuer.Rescue(connection, r))
 	}
 	if connection.Response().IsSent() == false {
 		connection.Response().Send()

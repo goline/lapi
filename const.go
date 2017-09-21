@@ -12,6 +12,7 @@ const (
 	ERR_ROUTER_NOT_DEFINED    = "0.001.001"
 	ERR_SERVER_CONFIG_MISSING = "0.001.002"
 	ERR_NO_HANDLER_FOUND      = "0.001.003"
+	ERR_INVALID_ARGUMENT      = "0.001.004"
 
 	// Router, http errors
 	ERR_HTTP_NOT_FOUND              = "0.002.001"

@@ -1,8 +1,10 @@
 package lapi
 
 import (
-	"github.com/goline/errors"
+	"fmt"
 	"net/http"
+
+	"github.com/goline/errors"
 )
 
 // Rescuer handles error
@@ -10,7 +12,7 @@ type Rescuer interface {
 	// Rescue handles error, it returns nil if error is handled,
 	// and error itself if could not be handled properly
 	// Server should panic if an error is returned
-	Rescue(connection Connection, err error) error
+	Rescue(connection Connection, v interface{}) error
 }
 
 func NewRescuer() Rescuer {
@@ -29,13 +31,14 @@ type ErrorResponse struct {
 
 type FactoryRescuer struct{}
 
-func (r *FactoryRescuer) Rescue(c Connection, err error) error {
+func (r *FactoryRescuer) Rescue(c Connection, v interface{}) error {
 	if c == nil {
-		return err
+		return errors.New(ERR_INVALID_ARGUMENT, "Connection must be not nil")
 	}
 
 	var code, message string
-	if e, ok := err.(errors.Error); ok == true {
+	code = ERR_HTTP_UNKNOWN_ERROR
+	if e, ok := v.(errors.Error); ok == true {
 		code = e.Code()
 		switch code {
 		case ERR_HTTP_NOT_FOUND:
@@ -48,9 +51,10 @@ func (r *FactoryRescuer) Rescue(c Connection, err error) error {
 			c.Response().WithStatus(http.StatusInternalServerError)
 		}
 		message = e.Message()
+	} else if e, ok := v.(error); ok == true {
+		message = e.Error()
 	} else {
-		code = ERR_HTTP_UNKNOWN_ERROR
-		message = err.Error()
+		message = fmt.Sprintf("%s", v)
 	}
 	c.Response().WithContent(&ErrorResponse{code, message})
 
