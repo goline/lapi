@@ -29,12 +29,20 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-type FactoryRescuer struct{}
+type FactoryRescuer struct {
+	parser Parser
+}
 
 func (r *FactoryRescuer) Rescue(c Connection, v interface{}) error {
 	if c == nil {
 		return errors.New(ERR_INVALID_ARGUMENT, "Connection must be not nil")
 	}
+	if r.parser == nil {
+		r.parser = new(JsonParser)
+	}
+	c.Response().
+		WithContentType(CONTENT_TYPE_JSON).
+		WithParser(r.parser)
 
 	var code, message string
 	code = ERR_HTTP_UNKNOWN_ERROR
