@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/goline/errors"
 )
 
 func TestNewResponse(t *testing.T) {
@@ -156,7 +158,7 @@ func TestFactoryResponse_Send_ErrorNoWriter(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_NO_WRITER_FOUND {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_NO_WRITER_FOUND {
 		t.Errorf("Expects got error response has no writers. Got %v", err)
 	}
 }
@@ -168,7 +170,7 @@ func TestFactoryResponse_Send_ErrorAlreadySent(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_RESPONSE_ALREADY_SENT {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_RESPONSE_ALREADY_SENT {
 		t.Errorf("Expects got error response is already sent. Got %v", err)
 	}
 }
@@ -179,7 +181,7 @@ func TestFactoryResponse_Send_ErrorContentTypeEmpty(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_CONTENT_TYPE_EMPTY {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_CONTENT_TYPE_EMPTY {
 		t.Errorf("Expects got error response's content-type is empty. Got %v", err)
 	}
 }
@@ -203,7 +205,7 @@ func TestFactoryResponse_Send_ContentError(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_NO_PARSER_FOUND {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_NO_PARSER_FOUND {
 		t.Errorf("Expects got error response has no parser. Got %v", err)
 	}
 }

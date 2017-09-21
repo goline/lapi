@@ -1,0 +1,3 @@
+package: github.com/goline/lapi
+import:
+- package: github.com/goline/errors

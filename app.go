@@ -3,6 +3,8 @@ package lapi
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/goline/errors"
 )
 
 // App is a central application
@@ -122,14 +124,14 @@ func (a *FactoryApp) setUp() *FactoryApp {
 
 func (a *FactoryApp) handle() *FactoryApp {
 	if a.router == nil {
-		panic(NewError(ERR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet."), nil))
+		panic(errors.New(ERR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
 	}
 
 	http.Handle("/", a)
 	if c, ok := a.config.(ServerConfig); ok == true {
 		PanicOnError(http.ListenAndServe(c.Address(), nil))
 	} else {
-		panic(NewError(ERR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing"), nil))
+		panic(errors.New(ERR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing")))
 	}
 	return a
 }
@@ -148,7 +150,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	handler := connection.Request().Route().Handler()
 	if handler == nil {
-		panic(NewError(ERR_NO_HANDLER_FOUND, "No handler found", nil))
+		panic(errors.New(ERR_NO_HANDLER_FOUND, "No handler found"))
 	}
 
 	PanicOnError(a.container.Inject(handler))

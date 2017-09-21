@@ -2,6 +2,7 @@ package lapi
 
 import (
 	"fmt"
+	"github.com/goline/errors"
 	"net/http"
 )
 
@@ -118,16 +119,16 @@ func (r *FactoryResponse) WithCookies(cookies []*http.Cookie) Response {
 
 func (r *FactoryResponse) Send() error {
 	if r.writer == nil {
-		return NewError(ERR_NO_WRITER_FOUND, "No writer found", nil)
+		return errors.New(ERR_NO_WRITER_FOUND, "No writer found")
 	}
 
 	if r.isSent {
-		return NewError(ERR_RESPONSE_ALREADY_SENT, "Response is already sent", nil)
+		return errors.New(ERR_RESPONSE_ALREADY_SENT, "Response is already sent")
 	}
 
 	contentType := r.ContentType()
 	if contentType == "" {
-		return NewError(ERR_CONTENT_TYPE_EMPTY, "Content-Type is required", nil)
+		return errors.New(ERR_CONTENT_TYPE_EMPTY, "Content-Type is required")
 	}
 	charset := r.Charset()
 	if charset != "" {

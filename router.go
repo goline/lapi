@@ -1,9 +1,10 @@
 package lapi
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/goline/errors"
 )
 
 // Router is an application's router
@@ -149,7 +150,7 @@ func (r *FactoryRouter) Register(method string, uri string, handler Handler) Rou
 		route := NewRoute(method, uri, handler)
 		_, ok := r.ByName(route.Name())
 		if ok == true {
-			panic(errors.New(fmt.Sprintf("Route with name %s has already been defined", route.Name())))
+			panic(errors.New(ERR_ROUTER_DUPLICATE_ROUTE_NAME, fmt.Sprintf("Route with name %s has already been defined", route.Name())))
 		}
 
 		r.routes = append(r.routes, route)
@@ -219,7 +220,7 @@ func (r *FactoryRouter) Route(request Request) error {
 			return nil
 		}
 	}
-	return NewError(ERR_HTTP_NOT_FOUND, fmt.Sprintf("Url (%s %s) could not be found", request.Method(), request.Uri()), nil)
+	return errors.New(ERR_HTTP_NOT_FOUND, fmt.Sprintf("Url (%s %s) could not be found", request.Method(), request.Uri()))
 }
 
 func (r *FactoryRouter) Copy(router Router) Router {

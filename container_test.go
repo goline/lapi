@@ -1,9 +1,10 @@
 package lapi
 
 import (
-	"errors"
 	"reflect"
 	"testing"
+
+	"github.com/goline/errors"
 )
 
 func TestNewContainer(t *testing.T) {
@@ -15,36 +16,38 @@ func TestNewContainer(t *testing.T) {
 
 func TestFactoryContainer_Bind_ErrorAbstractIsNotAnInterfaceOrStruct(t *testing.T) {
 	c := NewContainer()
-	err := c.Bind("string", &FactoryError{})
+	err := c.Bind("string", &errors.FactoryError{})
 	if err == nil {
 		t.Errorf("Expects err is not nil")
-	} else if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_INVALID_ARGUMENTS {
+	} else if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_BIND_INVALID_ARGUMENTS {
 		t.Errorf("Expects ERR_BIND_INVALID_ARGUMENTS. Got %s", e.Code())
 	}
 }
 
 func TestFactoryContainer_Bind_ErrorConcreteNotImplementAbstract(t *testing.T) {
 	c := NewContainer()
-	err := c.Bind((*Bag)(nil), &FactoryError{})
+	err := c.Bind((*Bag)(nil), &errors.FactoryError{})
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_NOT_IMPLEMENT_INTERFACE {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_BIND_NOT_IMPLEMENT_INTERFACE {
 		t.Errorf("Expects ERR_BIND_NOT_IMPLEMENT_INTERFACE code. Got %s", e.Code())
 	}
 }
+
+type sampleInvalidError struct{}
 
 func TestFactoryContainer_Bind_ErrorNotSupportAbstractType(t *testing.T) {
 	c := NewContainer()
 	a := make([]interface{}, 2)
 	a[0] = "a_string"
-	a[1] = FactoryError{"my_code", "my_message", errors.New("my_err")}
+	a[1] = sampleInvalidError{}
 	for _, i := range a {
 		err := c.Bind((*Bag)(nil), i)
 		if err == nil {
 			t.Errorf("Expects err is not nil")
 		}
-		if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_INVALID_CONCRETE {
+		if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_BIND_INVALID_CONCRETE {
 			t.Errorf("Expects ERR_BIND_INVALID_CONCRETE code. Got %v", e.Code())
 		}
 	}
@@ -63,17 +66,17 @@ func TestFactoryContainer_Bind_Struct_BindErrorInvalidStruct(t *testing.T) {
 	err := c.Bind(FactoryBag{}, "not_a_struct")
 	if err == nil {
 		t.Errorf("Expects err is not nil")
-	} else if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_INVALID_STRUCT {
+	} else if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_BIND_INVALID_STRUCT {
 		t.Errorf("Expects ERR_BIND_INVALID_STRUCT. Got %s", e.Code())
 	}
 }
 
 func TestFactoryContainer_Bind_Struct_BindErrorInvalidStructConcrete(t *testing.T) {
 	c := NewContainer()
-	err := c.Bind(FactoryBag{}, &FactoryError{})
+	err := c.Bind(FactoryBag{}, &errors.FactoryError{})
 	if err == nil {
 		t.Errorf("Expects err is not nil")
-	} else if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_INVALID_STRUCT_CONCRETE {
+	} else if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_BIND_INVALID_STRUCT_CONCRETE {
 		t.Errorf("Expects ERR_BIND_INVALID_STRUCT_CONCRETE. Got %s", e.Code())
 	}
 }
@@ -109,8 +112,8 @@ func TestFactoryContainer_Resolve_ErrorInvalidConcreteType(t *testing.T) {
 
 func TestFactoryContainer_Bind_Function_Ok(t *testing.T) {
 	c := NewContainer()
-	err := c.Bind((*Error)(nil), func(code string, message string, err error) Error {
-		return NewError(code, message, err)
+	err := c.Bind((*errors.Error)(nil), func(code string, message string, err error) errors.Error {
+		return errors.New(code, message)
 	})
 	if err != nil {
 		t.Errorf("Expects error is not nil")
@@ -119,7 +122,7 @@ func TestFactoryContainer_Bind_Function_Ok(t *testing.T) {
 
 func TestFactoryContainer_Bind_Ptr_Ok(t *testing.T) {
 	c := NewContainer()
-	err := c.Bind((*Error)(nil), NewError("my_code", "my_message", errors.New("my_error")))
+	err := c.Bind((*errors.Error)(nil), errors.New("my_code", "my_message"))
 	if err != nil {
 		t.Errorf("Expects error is not nil")
 	}
@@ -127,40 +130,40 @@ func TestFactoryContainer_Bind_Ptr_Ok(t *testing.T) {
 
 func TestFactoryContainer_Resolve_Func_ErrorInsufficientArguments(t *testing.T) {
 	c := NewContainer()
-	c.Bind((*Error)(nil), func(code string, message string, err error) Error {
-		return NewError(code, message, err)
+	c.Bind((*errors.Error)(nil), func(code string, message string, err error) errors.Error {
+		return errors.New(code, message)
 	})
-	_, err := c.Resolve((*Error)(nil), "my_code", "my_message")
+	_, err := c.Resolve((*errors.Error)(nil), "my_code", "my_message")
 	if err == nil {
 		t.Errorf("Expects error is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_RESOLVE_INSUFFICIENT_ARGUMENTS {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_RESOLVE_INSUFFICIENT_ARGUMENTS {
 		t.Errorf("Expects ERR_RESOLVE_INSUFFICIENT_ARGUMENTS code. Got %s", e.Code())
 	}
 }
 
 func TestFactoryContainer_Resolve_Func_ErrorNonValuesReturned(t *testing.T) {
 	c := NewContainer()
-	c.Bind((*Error)(nil), func(code string, message string, err error) {})
-	_, err := c.Resolve((*Error)(nil), "my_code", "my_message", errors.New("my_err"))
+	c.Bind((*errors.Error)(nil), func(code string, message string) {})
+	_, err := c.Resolve((*errors.Error)(nil), "my_code", "my_message")
 	if err == nil {
 		t.Errorf("Expects error is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_RESOLVE_NON_VALUES_RETURNED {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_RESOLVE_NON_VALUES_RETURNED {
 		t.Errorf("Expects ERR_RESOLVE_NON_VALUES_RETURNED code. Got %s", e.Code())
 	}
 }
 
 func TestFactoryContainer_Resolve_Func_Ok(t *testing.T) {
 	c := NewContainer()
-	c.Bind((*Error)(nil), func(code string, message string, err error) Error {
-		return NewError(code, message, err)
+	c.Bind((*errors.Error)(nil), func(code string, message string) errors.Error {
+		return errors.New(code, message)
 	})
-	e, err := c.Resolve((*Error)(nil), "my_code", "my_message", errors.New("my_err"))
+	e, err := c.Resolve((*errors.Error)(nil), "my_code", "my_message")
 	if err != nil {
 		t.Errorf("Expects error is nil")
 	}
-	er, ok := e.(Error)
+	er, ok := e.(errors.Error)
 	if ok == false {
 		t.Errorf("Expects error is an instance of Error")
 	}
@@ -171,12 +174,12 @@ func TestFactoryContainer_Resolve_Func_Ok(t *testing.T) {
 
 func TestFactoryContainer_Resolve_Ptr_Ok(t *testing.T) {
 	c := NewContainer()
-	c.Bind((*Error)(nil), &FactoryError{"my_code", "my_message", errors.New("my_err")})
-	e, err := c.Resolve((*Error)(nil))
+	c.Bind((*errors.Error)(nil), errors.New("my_code", "my_message"))
+	e, err := c.Resolve((*errors.Error)(nil))
 	if err != nil {
 		t.Errorf("Expects error is nil")
 	}
-	er, ok := e.(Error)
+	er, ok := e.(errors.Error)
 	if ok == false {
 		t.Errorf("Expects error is an instance of Error")
 	}
@@ -205,20 +208,25 @@ func TestFactoryContainer_Resolve_ResolveErrorInvalidArguments(t *testing.T) {
 	}
 }
 
+type facErr struct {
+	code string
+	msg  string
+}
+
 func TestFactoryContainer_Inject_ErrorInjectInvalidTargetType(t *testing.T) {
 	c := NewContainer()
-	e := FactoryError{"my_code", "my_message", errors.New("my_err")}
+	e := facErr{"my_code", "my_message"}
 	err := c.Inject(e)
 	if err == nil {
 		t.Errorf("Expects error is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_INJECT_INVALID_TARGET_TYPE {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_INJECT_INVALID_TARGET_TYPE {
 		t.Errorf("Expects ERR_INJECT_INVALID_TARGET_TYPE code. Got %s", e.Code())
 	}
 }
 
 type InjectErrorResolveErrorNotExistAbstract struct {
-	Err Error `inject:"*"`
+	Err errors.Error `inject:"*"`
 }
 
 func TestFactoryContainer_Inject_ErrorResolveErrorNotExistAbstract(t *testing.T) {
@@ -228,18 +236,18 @@ func TestFactoryContainer_Inject_ErrorResolveErrorNotExistAbstract(t *testing.T)
 	if err == nil {
 		t.Errorf("Expects error is not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_RESOLVE_NOT_EXIST_ABSTRACT {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_RESOLVE_NOT_EXIST_ABSTRACT {
 		t.Errorf("Expects ERR_RESOLVE_NOT_EXIST_ABSTRACT code. Got %s", e.Code())
 	}
 }
 
 type InjectOk struct {
-	Err Error `inject:"*"`
+	Err errors.Error `inject:"*"`
 }
 
 func TestFactoryContainer_Inject_Ok(t *testing.T) {
 	c := NewContainer()
-	c.Bind((*Error)(nil), NewError("my_code", "my_message", errors.New("my_err")))
+	c.Bind((*errors.Error)(nil), errors.New("my_code", "my_message"))
 	in := &InjectOk{}
 	err := c.Inject(in)
 	if err != nil {
@@ -251,16 +259,13 @@ func TestFactoryContainer_Inject_Ok(t *testing.T) {
 	if in.Err.Message() != "my_message" {
 		t.Errorf("Expects Err.Message() is my_message. Got %v", in.Err.Message())
 	}
-	if in.Err.Trace().Error() != "my_err" {
-		t.Errorf("Expects Err.Error() is my_err. Got %v", in.Err.Trace().Error())
-	}
 }
 
 type InjectRecursiveOk struct {
-	Err                          Error       `inject:"*"`
-	Foo                          InjectFooer `inject:"*"`
-	NotInjectableNonInterface    string      `inject:"*"`
-	notInjectablePrivateProperty Error       `inject:"*"`
+	Err                          errors.Error `inject:"*"`
+	Foo                          InjectFooer  `inject:"*"`
+	NotInjectableNonInterface    string       `inject:"*"`
+	notInjectablePrivateProperty errors.Error `inject:"*"`
 }
 type InjectFooer interface {
 	Foo() string
@@ -281,7 +286,7 @@ func TestFactoryContainer_Inject_Recursive_Ok(t *testing.T) {
 	// InjectRecursiveOk -> Err
 	// InjectRecursiveOk -> Foo -> Baz
 	c := NewContainer()
-	c.Bind((*Error)(nil), NewError("my_code", "my_message", errors.New("my_err")))
+	c.Bind((*errors.Error)(nil), errors.New("my_code", "my_message"))
 	c.Bind((*InjectFooer)(nil), &InjectFoo{})
 	c.Bind((*InjectBazer)(nil), &InjectBaz{})
 	in := &InjectRecursiveOk{}
@@ -296,9 +301,6 @@ func TestFactoryContainer_Inject_Recursive_Ok(t *testing.T) {
 	}
 	if in.Err.Message() != "my_message" {
 		t.Errorf("Expects Err.Message() is my_message. Got %v", in.Err.Message())
-	}
-	if in.Err.Trace().Error() != "my_err" {
-		t.Errorf("Expects Err.Error() is my_err. Got %v", in.Err.Trace().Error())
 	}
 
 	// Asserting for in.Foo

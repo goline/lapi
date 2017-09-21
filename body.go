@@ -2,6 +2,8 @@ package lapi
 
 import (
 	"fmt"
+
+	"github.com/goline/errors"
 )
 
 type Body interface {
@@ -68,7 +70,7 @@ func (b *FactoryBody) WithContent(content interface{}) Body {
 			b.contentBytes = bytes
 		}
 	} else {
-		b.err = NewError(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType), nil)
+		b.err = errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
 	}
 
 	return b
@@ -95,7 +97,7 @@ func (b *FactoryBody) WithContentBytes(bytes []byte, v interface{}) Body {
 			b.contentBytes = bytes
 		}
 	} else {
-		b.err = NewError(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType), nil)
+		b.err = errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
 	}
 
 	return b

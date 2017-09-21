@@ -3,6 +3,8 @@ package lapi
 import (
 	"net/http"
 	"testing"
+
+	"github.com/goline/errors"
 )
 
 func TestNewRouter(t *testing.T) {
@@ -186,7 +188,7 @@ func TestFactoryRouter_Route_NotFound(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err to be not nil")
 	}
-	if e, ok := err.(Error); ok == false || e.Code() != ERR_HTTP_NOT_FOUND {
+	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_HTTP_NOT_FOUND {
 		t.Errorf("Expects err code is ERR_HTTP_NOT_FOUND. Got %s", e.Code())
 	}
 }

@@ -1,8 +1,9 @@
 package lapi
 
 import (
-	"errors"
 	"testing"
+
+	"github.com/goline/errors"
 )
 
 func TestNewBody(t *testing.T) {
@@ -50,7 +51,7 @@ func TestFactoryBody_WithContent(t *testing.T) {
 	if b.err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := b.err.(Error); ok == false || e.Code() != ERR_NO_PARSER_FOUND {
+	if e, ok := b.err.(errors.Error); ok == false || e.Code() != ERR_NO_PARSER_FOUND {
 		t.Errorf("Expects err is SystemError. Got %v", b.err)
 	}
 
@@ -69,10 +70,10 @@ func TestFactoryBody_WithContent(t *testing.T) {
 type sampleParserForBody struct{}
 
 func (p *sampleParserForBody) Encode(v interface{}) ([]byte, error) {
-	return make([]byte, 0), errors.New("UNABLE_TO_ENCODE")
+	return make([]byte, 0), errors.New("UNABLE_TO_ENCODE", "")
 }
 func (p *sampleParserForBody) Decode(data []byte, v interface{}) error {
-	return errors.New("UNABLE_TO_DECODE")
+	return errors.New("UNABLE_TO_DECODE", "")
 }
 func (p *sampleParserForBody) ContentType() string {
 	return CONTENT_TYPE_JSON
@@ -83,7 +84,7 @@ func TestFactoryBody_WithContent_ErrorEncoding(t *testing.T) {
 	b.WithParser(new(sampleParserForBody))
 	b.WithContentType(CONTENT_TYPE_JSON)
 	b.WithContent("a_string")
-	if b.err == nil || b.err.Error() != "UNABLE_TO_ENCODE" {
+	if b.err == nil || b.err.Error() != "[UNABLE_TO_ENCODE] " {
 		t.Errorf("Expects err is not nil")
 	}
 }
@@ -130,7 +131,7 @@ func TestFactoryBody_WithContentBytes_ErrorDecoding(t *testing.T) {
 	b.WithParser(new(sampleParserForBody))
 	b.WithContentType(CONTENT_TYPE_JSON)
 	b.WithContentBytes([]byte("a_string"), nil)
-	if b.err == nil || b.err.Error() != "UNABLE_TO_DECODE" {
+	if b.err == nil || b.err.Error() != "[UNABLE_TO_DECODE] " {
 		t.Errorf("Expects err is not nil")
 	}
 }

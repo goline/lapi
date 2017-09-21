@@ -1,6 +1,9 @@
 package lapi
 
-import "net/http"
+import (
+	"github.com/goline/errors"
+	"net/http"
+)
 
 // Rescuer handles error
 type Rescuer interface {
@@ -31,11 +34,8 @@ func (r *FactoryRescuer) Rescue(c Connection, err error) error {
 		return err
 	}
 
-	if e, ok := err.(ErrorStatuser); ok == true {
-		c.Response().WithStatus(e.Status())
-	}
 	var code, message string
-	if e, ok := err.(ErrorCoder); ok == true {
+	if e, ok := err.(errors.Error); ok == true {
 		code = e.Code()
 		switch code {
 		case ERR_HTTP_NOT_FOUND:
@@ -47,12 +47,9 @@ func (r *FactoryRescuer) Rescue(c Connection, err error) error {
 		default:
 			c.Response().WithStatus(http.StatusInternalServerError)
 		}
-	} else {
-		code = ERR_HTTP_UNKNOWN_ERROR
-	}
-	if e, ok := err.(ErrorMessager); ok == true {
 		message = e.Message()
 	} else {
+		code = ERR_HTTP_UNKNOWN_ERROR
 		message = err.Error()
 	}
 	c.Response().WithContent(&ErrorResponse{code, message})
