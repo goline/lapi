@@ -22,6 +22,22 @@ func TestFactoryRequest_Ancestor(t *testing.T) {
 	}
 }
 
+func TestFactoryRequest_Id(t *testing.T) {
+	r := &FactoryRequest{}
+	r.id = "0011"
+	if r.Id() != "0011" {
+		t.Errorf("Expects request id %s. Got %s", "0011", r.Id())
+	}
+}
+
+func TestFactoryRequest_WithId(t *testing.T) {
+	r := &FactoryRequest{}
+	r.WithId("0011")
+	if r.id != "0011" {
+		t.Errorf("Expects request id %s. Got %s", "0011", r.id)
+	}
+}
+
 func TestFactoryRequest_Route(t *testing.T) {
 	r := &FactoryRequest{}
 	if r.Route() != nil {

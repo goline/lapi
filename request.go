@@ -16,6 +16,7 @@ type Request interface {
 	RequestResolver
 	RequestInformer
 	RequestParameter
+	RequestIdentifier
 }
 
 type RequestBody Body
@@ -23,6 +24,14 @@ type RequestBody Body
 // RequestAncestor keeps original http.Request
 type RequestAncestor interface {
 	Ancestor() *http.Request
+}
+
+type RequestIdentifier interface {
+	// Id returns a unique request's id
+	Id() string
+
+	// WithId sets request id
+	WithId(id string) Request
 }
 
 // RequestResolver returns routing information
@@ -115,6 +124,7 @@ func NewRequest(req *http.Request) Request {
 }
 
 type FactoryRequest struct {
+	id       string
 	ancestor *http.Request
 	header   Header
 	input    interface{}
@@ -131,6 +141,15 @@ type FactoryRequest struct {
 
 func (r *FactoryRequest) Ancestor() *http.Request {
 	return r.ancestor
+}
+
+func (r *FactoryRequest) Id() string {
+	return r.id
+}
+
+func (r *FactoryRequest) WithId(id string) Request {
+	r.id = id
+	return r
 }
 
 func (r *FactoryRequest) Route() Route {
