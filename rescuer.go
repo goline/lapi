@@ -37,12 +37,18 @@ func (r *FactoryRescuer) Rescue(c Connection, err error) error {
 			c.Response().WithStatus(http.StatusNotFound)
 		case ERR_HTTP_BAD_REQUEST:
 			c.Response().WithStatus(http.StatusBadRequest)
+		case ERR_HTTP_INTERNAL_SERVER_ERROR:
+			c.Response().WithStatus(http.StatusInternalServerError)
 		default:
 			c.Response().WithStatus(http.StatusInternalServerError)
 		}
+	} else {
+		code = ERR_HTTP_UNKNOWN_ERROR
 	}
 	if e, ok := err.(ErrorMessager); ok == true {
 		message = e.Message()
+	} else {
+		message = err.Error()
 	}
 	c.Response().WithContent(&ErrorResponse{code, message})
 

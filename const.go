@@ -14,8 +14,10 @@ const (
 	ERR_NO_HANDLER_FOUND      = "0.001.003"
 
 	// Router, http errors
-	ERR_HTTP_NOT_FOUND   = "0.002.001"
-	ERR_HTTP_BAD_REQUEST = "0.002.002"
+	ERR_HTTP_NOT_FOUND             = "0.002.001"
+	ERR_HTTP_BAD_REQUEST           = "0.002.002"
+	ERR_HTTP_INTERNAL_SERVER_ERROR = "0.002.003"
+	ERR_HTTP_UNKNOWN_ERROR         = "0.002.004"
 
 	// Request, Response, Body, Parser errors
 	ERR_RESPONSE_ALREADY_SENT = "0.003.001"
