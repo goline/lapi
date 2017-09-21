@@ -21,49 +21,30 @@ type ErrorResponse struct {
 
 type FactoryRescuer struct{}
 
-func (r *FactoryRescuer) Rescue(connection Connection, err error) error {
-	if connection == nil {
+func (r *FactoryRescuer) Rescue(c Connection, err error) error {
+	if c == nil {
 		return err
 	}
-	switch e := err.(type) {
-	case SystemError:
-		r.handleSystemError(connection, e)
-	case StackError:
-		r.handleStackError(connection, e)
-	default:
-		r.handleUnknownError(connection, e)
-	}
 
-	return nil
-}
-
-func (r *FactoryRescuer) handleSystemError(c Connection, err SystemError) {
-	switch err.Code() {
-	case ERROR_HTTP_NOT_FOUND:
-		c.Response().WithStatus(http.StatusNotFound).
-			WithContent(&ErrorResponse{"ERROR_HTTP_NOT_FOUND", http.StatusText(http.StatusNotFound)})
-	case ERROR_HTTP_BAD_REQUEST:
-		c.Response().WithStatus(http.StatusBadRequest).
-			WithContent(&ErrorResponse{"ERROR_HTTP_BAD_REQUEST", http.StatusText(http.StatusBadRequest)})
-	default:
-		c.Response().WithStatus(http.StatusInternalServerError).
-			WithContent(&ErrorResponse{"ERROR_INTERNAL_SERVER_ERROR", err.Error()})
-	}
-}
-
-func (r *FactoryRescuer) handleStackError(c Connection, err StackError) {
-	c.Response().WithStatus(err.Status()).WithContent(&ErrorResponse{"", err.Error()})
-}
-
-func (r *FactoryRescuer) handleUnknownError(c Connection, err error) {
-	if e, ok := err.(ErrorStatus); ok == true {
+	if e, ok := err.(ErrorStatuser); ok == true {
 		c.Response().WithStatus(e.Status())
-	} else {
-		c.Response().WithStatus(http.StatusInternalServerError)
 	}
-	code := "ERROR_UNKNOWN_ERROR"
+	var code, message string
 	if e, ok := err.(ErrorCoder); ok == true {
 		code = e.Code()
+		switch code {
+		case ERR_HTTP_NOT_FOUND:
+			c.Response().WithStatus(http.StatusNotFound)
+		case ERR_HTTP_BAD_REQUEST:
+			c.Response().WithStatus(http.StatusBadRequest)
+		default:
+			c.Response().WithStatus(http.StatusInternalServerError)
+		}
 	}
-	c.Response().WithContent(&ErrorResponse{code, err.Error()})
+	if e, ok := err.(ErrorMessager); ok == true {
+		message = e.Message()
+	}
+	c.Response().WithContent(&ErrorResponse{code, message})
+
+	return nil
 }

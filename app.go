@@ -122,14 +122,14 @@ func (a *FactoryApp) setUp() *FactoryApp {
 
 func (a *FactoryApp) handle() *FactoryApp {
 	if a.router == nil {
-		panic(NewSystemError(ERROR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
+		panic(NewError(ERR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet."), nil))
 	}
 
 	http.Handle("/", a)
 	if c, ok := a.config.(ServerConfig); ok == true {
 		PanicOnError(http.ListenAndServe(c.Address(), nil))
 	} else {
-		panic(NewSystemError(ERROR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing")))
+		panic(NewError(ERR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing"), nil))
 	}
 	return a
 }
@@ -148,7 +148,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	handler := connection.Request().Route().Handler()
 	if handler == nil {
-		panic(NewSystemError(ERROR_NO_HANDLER_FOUND, "No handler found"))
+		panic(NewError(ERR_NO_HANDLER_FOUND, "No handler found", nil))
 	}
 
 	PanicOnError(a.container.Inject(handler))

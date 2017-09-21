@@ -156,8 +156,8 @@ func TestFactoryResponse_Send_ErrorNoWriter(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_NO_WRITER_FOUND {
-		t.Errorf("Expects got error response has no writers. Got %v", e)
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_NO_WRITER_FOUND {
+		t.Errorf("Expects got error response has no writers. Got %v", err)
 	}
 }
 
@@ -168,8 +168,8 @@ func TestFactoryResponse_Send_ErrorAlreadySent(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_RESPONSE_ALREADY_SENT {
-		t.Errorf("Expects got error response is already sent. Got %v", e)
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_RESPONSE_ALREADY_SENT {
+		t.Errorf("Expects got error response is already sent. Got %v", err)
 	}
 }
 
@@ -179,8 +179,8 @@ func TestFactoryResponse_Send_ErrorContentTypeEmpty(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_CONTENT_TYPE_EMPTY {
-		t.Errorf("Expects got error response's content-type is empty. Got %v", e)
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_CONTENT_TYPE_EMPTY {
+		t.Errorf("Expects got error response's content-type is empty. Got %v", err)
 	}
 }
 
@@ -203,8 +203,8 @@ func TestFactoryResponse_Send_ContentError(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_NO_PARSER_FOUND {
-		t.Errorf("Expects got error response has no parser. Got %v", e)
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_NO_PARSER_FOUND {
+		t.Errorf("Expects got error response has no parser. Got %v", err)
 	}
 }
 

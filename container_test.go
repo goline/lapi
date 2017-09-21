@@ -18,8 +18,8 @@ func TestFactoryContainer_Bind_ErrorAbstractIsNotAnInterfaceOrStruct(t *testing.
 	err := c.Bind("string", &FactoryError{})
 	if err == nil {
 		t.Errorf("Expects err is not nil")
-	} else if err.Code() != BindErrorInvalidArguments {
-		t.Errorf("Expects BindErrorInvalidArguments. Got %v", err.Code())
+	} else if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_INVALID_ARGUMENTS {
+		t.Errorf("Expects ERR_BIND_INVALID_ARGUMENTS. Got %s", e.Code())
 	}
 }
 
@@ -29,8 +29,8 @@ func TestFactoryContainer_Bind_ErrorConcreteNotImplementAbstract(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if err.Code() != BindErrorNotImplementedInterface {
-		t.Errorf("Expects BindErrorNotImplementedInterface code. Got %v", err.Code())
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_NOT_IMPLEMENT_INTERFACE {
+		t.Errorf("Expects ERR_BIND_NOT_IMPLEMENT_INTERFACE code. Got %s", e.Code())
 	}
 }
 
@@ -44,8 +44,8 @@ func TestFactoryContainer_Bind_ErrorNotSupportAbstractType(t *testing.T) {
 		if err == nil {
 			t.Errorf("Expects err is not nil")
 		}
-		if err.Code() != BindErrorInvalidConcrete {
-			t.Errorf("Expects BindErrorInvalidConcrete code. Got %v", err.Code())
+		if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_INVALID_CONCRETE {
+			t.Errorf("Expects ERR_BIND_INVALID_CONCRETE code. Got %v", e.Code())
 		}
 	}
 }
@@ -63,8 +63,8 @@ func TestFactoryContainer_Bind_Struct_BindErrorInvalidStruct(t *testing.T) {
 	err := c.Bind(FactoryBag{}, "not_a_struct")
 	if err == nil {
 		t.Errorf("Expects err is not nil")
-	} else if err.Code() != BindErrorInvalidStruct {
-		t.Errorf("Expects BindErrorInvalidStruct. Got %d", err.Code())
+	} else if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_INVALID_STRUCT {
+		t.Errorf("Expects ERR_BIND_INVALID_STRUCT. Got %s", e.Code())
 	}
 }
 
@@ -73,8 +73,8 @@ func TestFactoryContainer_Bind_Struct_BindErrorInvalidStructConcrete(t *testing.
 	err := c.Bind(FactoryBag{}, &FactoryError{})
 	if err == nil {
 		t.Errorf("Expects err is not nil")
-	} else if err.Code() != BindErrorInvalidStructConcrete {
-		t.Errorf("Expects BindErrorInvalidStructConcrete. Got %d", err.Code())
+	} else if e, ok := err.(Error); ok == false || e.Code() != ERR_BIND_INVALID_STRUCT_CONCRETE {
+		t.Errorf("Expects ERR_BIND_INVALID_STRUCT_CONCRETE. Got %s", e.Code())
 	}
 }
 
@@ -134,8 +134,8 @@ func TestFactoryContainer_Resolve_Func_ErrorInsufficientArguments(t *testing.T) 
 	if err == nil {
 		t.Errorf("Expects error is not nil")
 	}
-	if err.Code() != ResolveErrorInsufficientArguments {
-		t.Errorf("Expects ResolveErrorInsufficientArguments code. Got %v", err.Code())
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_RESOLVE_INSUFFICIENT_ARGUMENTS {
+		t.Errorf("Expects ERR_RESOLVE_INSUFFICIENT_ARGUMENTS code. Got %s", e.Code())
 	}
 }
 
@@ -146,8 +146,8 @@ func TestFactoryContainer_Resolve_Func_ErrorNonValuesReturned(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects error is not nil")
 	}
-	if err.Code() != ResolveErrorNonValuesReturned {
-		t.Errorf("Expects ResolveErrorNonValuesReturned code. Got %v", err.Code())
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_RESOLVE_NON_VALUES_RETURNED {
+		t.Errorf("Expects ERR_RESOLVE_NON_VALUES_RETURNED code. Got %s", e.Code())
 	}
 }
 
@@ -212,8 +212,8 @@ func TestFactoryContainer_Inject_ErrorInjectInvalidTargetType(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects error is not nil")
 	}
-	if err.Code() != InjectErrorInvalidTargetType {
-		t.Errorf("Expects InjectErrorInvalidTargetType code. Got %v", err.Code())
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_INJECT_INVALID_TARGET_TYPE {
+		t.Errorf("Expects ERR_INJECT_INVALID_TARGET_TYPE code. Got %s", e.Code())
 	}
 }
 
@@ -228,8 +228,8 @@ func TestFactoryContainer_Inject_ErrorResolveErrorNotExistAbstract(t *testing.T)
 	if err == nil {
 		t.Errorf("Expects error is not nil")
 	}
-	if err.Code() != ResolveErrorNotExistAbstract {
-		t.Errorf("Expects ResolveErrorNotExistAbstract code. Got %v", err.Code())
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_RESOLVE_NOT_EXIST_ABSTRACT {
+		t.Errorf("Expects ERR_RESOLVE_NOT_EXIST_ABSTRACT code. Got %s", e.Code())
 	}
 }
 

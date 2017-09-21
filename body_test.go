@@ -50,7 +50,7 @@ func TestFactoryBody_WithContent(t *testing.T) {
 	if b.err == nil {
 		t.Errorf("Expects err is not nil")
 	}
-	if e, ok := b.err.(SystemError); ok == false || e.Code() != ERROR_NO_PARSER_FOUND {
+	if e, ok := b.err.(Error); ok == false || e.Code() != ERR_NO_PARSER_FOUND {
 		t.Errorf("Expects err is SystemError. Got %v", b.err)
 	}
 

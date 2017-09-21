@@ -68,7 +68,7 @@ func (b *FactoryBody) WithContent(content interface{}) Body {
 			b.contentBytes = bytes
 		}
 	} else {
-		b.err = NewSystemError(ERROR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
+		b.err = NewError(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType), nil)
 	}
 
 	return b
@@ -95,7 +95,7 @@ func (b *FactoryBody) WithContentBytes(bytes []byte, v interface{}) Body {
 			b.contentBytes = bytes
 		}
 	} else {
-		b.err = NewSystemError(ERROR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
+		b.err = NewError(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType), nil)
 	}
 
 	return b

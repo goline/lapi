@@ -2,7 +2,6 @@ package lapi
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type Parser interface {
@@ -54,23 +53,4 @@ func (p *JsonParser) Decode(data []byte, v interface{}) error {
 
 func (p *JsonParser) Encode(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
-}
-
-type TextParser struct{}
-
-func (p *TextParser) ContentType() string {
-	return CONTENT_TYPE_TEXT
-}
-
-func (p *TextParser) Decode(data []byte, v interface{}) error {
-	v = string(data)
-	return nil
-}
-
-func (p *TextParser) Encode(v interface{}) ([]byte, error) {
-	if s, ok := v.(string); ok == true {
-		return []byte(s), nil
-	}
-
-	return nil, NewSystemError(ERROR_PARSE_INVALID_CONTENT, fmt.Sprintf("Unable to convert %T to []byte", v))
 }

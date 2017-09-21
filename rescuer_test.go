@@ -14,7 +14,7 @@ func TestNewRescuer(t *testing.T) {
 
 func TestFactoryRescuer_Rescue_HandleSystemError_HttpNotFound(t *testing.T) {
 	c := NewConnection(nil, getEmptyResponse())
-	e := NewSystemError(ERROR_HTTP_NOT_FOUND, "")
+	e := NewError(ERR_HTTP_NOT_FOUND, "", nil)
 	h := &FactoryRescuer{}
 	h.Rescue(c, e)
 	if c.Response().Status() != http.StatusNotFound {
@@ -24,31 +24,11 @@ func TestFactoryRescuer_Rescue_HandleSystemError_HttpNotFound(t *testing.T) {
 
 func TestFactoryRescuer_Rescue_HandleSystemError_HttpBadRequest(t *testing.T) {
 	c := NewConnection(nil, getEmptyResponse())
-	e := NewSystemError(ERROR_HTTP_BAD_REQUEST, "")
+	e := NewError(ERR_HTTP_BAD_REQUEST, "", nil)
 	h := &FactoryRescuer{}
 	h.Rescue(c, e)
 	if c.Response().Status() != http.StatusBadRequest {
 		t.Errorf("Expects http status is StatusBadRequest. Got %d", c.Response().Status())
-	}
-}
-
-func TestFactoryRescuer_Rescue_HandleSystemError_Default(t *testing.T) {
-	c := NewConnection(nil, getEmptyResponse())
-	e := NewSystemError(9999, "")
-	h := &FactoryRescuer{}
-	h.Rescue(c, e)
-	if c.Response().Status() != http.StatusInternalServerError {
-		t.Errorf("Expects http status is StatusInternalServerError. Got %d", c.Response().Status())
-	}
-}
-
-func TestFactoryRescuer_Rescue_HandleStackError(t *testing.T) {
-	c := NewConnection(nil, getEmptyResponse())
-	e := NewStackError(http.StatusInternalServerError, []Error{NewError("11", "err1", nil)})
-	h := &FactoryRescuer{}
-	h.Rescue(c, e)
-	if c.Response().Status() != http.StatusInternalServerError {
-		t.Errorf("Expects http status is StatusInternalServerError. Got %d", c.Response().Status())
 	}
 }
 

@@ -186,8 +186,8 @@ func TestFactoryRouter_Route_NotFound(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expects err to be not nil")
 	}
-	if e, ok := err.(SystemError); ok == false || e.Code() != ERROR_HTTP_NOT_FOUND {
-		t.Errorf("Expects err code is ERROR_HTTP_NOT_FOUND. Got %v", err)
+	if e, ok := err.(Error); ok == false || e.Code() != ERR_HTTP_NOT_FOUND {
+		t.Errorf("Expects err code is ERR_HTTP_NOT_FOUND. Got %s", e.Code())
 	}
 }
 

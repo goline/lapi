@@ -118,16 +118,16 @@ func (r *FactoryResponse) WithCookies(cookies []*http.Cookie) Response {
 
 func (r *FactoryResponse) Send() error {
 	if r.writer == nil {
-		return NewSystemError(ERROR_NO_WRITER_FOUND, "No writer found")
+		return NewError(ERR_NO_WRITER_FOUND, "No writer found", nil)
 	}
 
 	if r.isSent {
-		return NewSystemError(ERROR_RESPONSE_ALREADY_SENT, "Response is already sent")
+		return NewError(ERR_RESPONSE_ALREADY_SENT, "Response is already sent", nil)
 	}
 
 	contentType := r.ContentType()
 	if contentType == "" {
-		return NewSystemError(ERROR_CONTENT_TYPE_EMPTY, "Content-Type is required")
+		return NewError(ERR_CONTENT_TYPE_EMPTY, "Content-Type is required", nil)
 	}
 	charset := r.Charset()
 	if charset != "" {
