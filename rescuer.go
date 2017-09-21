@@ -15,7 +15,12 @@ func NewRescuer() Rescuer {
 }
 
 type ErrorResponse struct {
-	Code    string `json:"code"`
+	// The error code
+	// Required: true
+	Code string `json:"code"`
+
+	// The error message
+	// Required: true
 	Message string `json:"message"`
 }
 
