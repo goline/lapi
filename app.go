@@ -13,6 +13,7 @@ type App interface {
 	AppRunner
 	AppRouter
 	AppRescuer
+	AppConfigger
 	ContainerAware
 }
 
@@ -20,6 +21,11 @@ type App interface {
 type AppLoader interface {
 	// WithLoader allows to register application's loader
 	WithLoader(loader Loader) App
+}
+
+type AppConfigger interface {
+	// Config returns application's configuration
+	Config() interface{}
 }
 
 // AppRouter handles router
@@ -65,6 +71,10 @@ type FactoryApp struct {
 func (a *FactoryApp) WithLoader(loader Loader) App {
 	a.loaders = append(a.loaders, loader)
 	return a
+}
+
+func (a *FactoryApp) Config() interface{} {
+	return a.config
 }
 
 func (a *FactoryApp) Router() Router {
