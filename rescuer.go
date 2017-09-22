@@ -56,13 +56,19 @@ func (r *FactoryRescuer) Rescue(c Connection, v interface{}) error {
 		case ERR_HTTP_INTERNAL_SERVER_ERROR:
 			c.Response().WithStatus(http.StatusInternalServerError)
 		default:
-			c.Response().WithStatus(http.StatusInternalServerError)
+			if e.Status() == http.StatusOK {
+				c.Response().WithStatus(http.StatusInternalServerError)
+			} else {
+				c.Response().WithStatus(e.Status())
+			}
 		}
 		message = e.Message()
 	} else if e, ok := v.(error); ok == true {
 		message = e.Error()
+		c.Response().WithStatus(http.StatusInternalServerError)
 	} else {
 		message = fmt.Sprintf("%s", v)
+		c.Response().WithStatus(http.StatusInternalServerError)
 	}
 	c.Response().WithContent(&ErrorResponse{code, message})
 
