@@ -2,6 +2,7 @@ package lapi
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -123,8 +124,8 @@ type FactoryRoute struct {
 	hooks          []Hook
 	pvHost         *patternVerifier
 	pvUri          *patternVerifier
-	requestInput   interface{}
-	responseOutput interface{}
+	requestInput   reflect.Type
+	responseOutput reflect.Type
 	tags           []string
 }
 
@@ -215,20 +216,20 @@ func (r *FactoryRoute) Match(request Request) (Route, bool) {
 }
 
 func (r *FactoryRoute) RequestInput() interface{} {
-	return r.requestInput
+	return Clone(r.requestInput)
 }
 
 func (r *FactoryRoute) WithRequestInput(input interface{}) Route {
-	r.requestInput = input
+	r.requestInput = StructOf(input)
 	return r
 }
 
 func (r *FactoryRoute) ResponseOutput() interface{} {
-	return r.responseOutput
+	return Clone(r.responseOutput)
 }
 
 func (r *FactoryRoute) WithResponseOutput(output interface{}) Route {
-	r.responseOutput = output
+	r.responseOutput = StructOf(output)
 	return r
 }
 

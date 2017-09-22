@@ -1,6 +1,7 @@
 package lapi
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -196,7 +197,7 @@ type sampleResponseOutput struct{}
 
 func TestFactoryRoute_RequestInput(t *testing.T) {
 	r := &FactoryRoute{}
-	r.requestInput = &sampleRequestInput{}
+	r.requestInput = reflect.TypeOf(&sampleRequestInput{})
 	if r.RequestInput() == nil {
 		t.Errorf("Expects RequestInput is not nil")
 	}
@@ -204,7 +205,7 @@ func TestFactoryRoute_RequestInput(t *testing.T) {
 
 func TestFactoryRoute_WithRequestInput(t *testing.T) {
 	r := &FactoryRoute{}
-	r.requestInput = &sampleRequestInput{}
+	r.requestInput = reflect.TypeOf(&sampleRequestInput{})
 	if r.WithRequestInput(&sampleRequestInput{}).RequestInput() == nil {
 		t.Errorf("Expects RequestInput is not nil")
 	}
@@ -212,7 +213,7 @@ func TestFactoryRoute_WithRequestInput(t *testing.T) {
 
 func TestFactoryRoute_ResponseOutput(t *testing.T) {
 	r := &FactoryRoute{}
-	r.responseOutput = &sampleResponseOutput{}
+	r.responseOutput = reflect.TypeOf(&sampleResponseOutput{})
 	if r.ResponseOutput() == nil {
 		t.Errorf("Expects ResponseOutput is not nil")
 	}
@@ -220,7 +221,7 @@ func TestFactoryRoute_ResponseOutput(t *testing.T) {
 
 func TestFactoryRoute_WithResponseOutput(t *testing.T) {
 	r := &FactoryRoute{}
-	r.responseOutput = &sampleResponseOutput{}
+	r.responseOutput = reflect.TypeOf(&sampleResponseOutput{})
 	if r.WithResponseOutput(&sampleResponseOutput{}).ResponseOutput() == nil {
 		t.Errorf("Expects ResponseOutput is not nil")
 	}

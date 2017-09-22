@@ -84,7 +84,7 @@ func TestFactoryBody_WithContent_ErrorEncoding(t *testing.T) {
 	b.WithParser(new(sampleParserForBody))
 	b.WithContentType(CONTENT_TYPE_JSON)
 	b.WithContent("a_string")
-	if b.err == nil || b.err.Error() != "[UNABLE_TO_ENCODE] " {
+	if b.err == nil {
 		t.Errorf("Expects err is not nil")
 	}
 }
@@ -131,7 +131,7 @@ func TestFactoryBody_WithContentBytes_ErrorDecoding(t *testing.T) {
 	b.WithParser(new(sampleParserForBody))
 	b.WithContentType(CONTENT_TYPE_JSON)
 	b.WithContentBytes([]byte("a_string"), nil)
-	if b.err == nil || b.err.Error() != "[UNABLE_TO_DECODE] " {
+	if b.err == nil {
 		t.Errorf("Expects err is not nil")
 	}
 }
