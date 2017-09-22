@@ -220,7 +220,8 @@ func (r *FactoryRouter) Route(request Request) error {
 			return nil
 		}
 	}
-	return errors.New(ERR_HTTP_NOT_FOUND, fmt.Sprintf("Url (%s %s) could not be found", request.Method(), request.Uri()))
+	return errors.New(ERR_HTTP_NOT_FOUND, fmt.Sprintf("Url (%s %s) could not be found", request.Method(), request.Uri())).
+		WithLevel(errors.LEVEL_WARN)
 }
 
 func (r *FactoryRouter) Copy(router Router) Router {
