@@ -64,7 +64,7 @@ func (b *FactoryBody) WithContent(content interface{}) Body {
 	if ok == true {
 		bytes, err := p.Encode(content)
 		if err != nil {
-			b.err = err
+			b.err = errors.New(ERR_PARSE_ENCODE_FAILURE, fmt.Sprintf("Unable to encode content. Got %s", err))
 		} else {
 			b.content = content
 			b.contentBytes = bytes
@@ -91,7 +91,7 @@ func (b *FactoryBody) WithContentBytes(bytes []byte, v interface{}) Body {
 	if ok == true {
 		err := p.Decode(bytes, v)
 		if err != nil {
-			b.err = err
+			b.err = errors.New(ERR_PARSE_DECODE_FAILURE, fmt.Sprintf("Unable to decode content. Got %s", err))
 		} else {
 			b.content = v
 			b.contentBytes = bytes
