@@ -16,6 +16,7 @@ type App interface {
 	AppRescuer
 	AppConfigger
 	ContainerAware
+	http.Handler
 }
 
 // AppLoader handles application's loader
