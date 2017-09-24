@@ -3,6 +3,7 @@ package lapi
 import (
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/goline/errors"
 )
@@ -115,16 +116,24 @@ func (a *FactoryApp) Run(container Container, config interface{}) {
 
 	a.container = container
 	a.config = config
-	a.setUp().handle()
+	a.SetUp().Handle()
 }
 
-func (a *FactoryApp) setUp() *FactoryApp {
+func (a *FactoryApp) SetUp() *FactoryApp {
 	if a.container == nil {
 		panic("App requires a container to run")
 	}
+
+	var wg sync.WaitGroup
 	for _, loader := range a.loaders {
-		loader.Load(a)
+		wg.Add(1)
+		go func(loader Loader) {
+			defer wg.Done()
+			loader.Load(a)
+		}(loader)
 	}
+	wg.Wait()
+
 	if a.rescuer == nil {
 		a.WithRescuer(NewRescuer())
 	}
@@ -132,7 +141,7 @@ func (a *FactoryApp) setUp() *FactoryApp {
 	return a
 }
 
-func (a *FactoryApp) handle() *FactoryApp {
+func (a *FactoryApp) Handle() *FactoryApp {
 	if a.router == nil {
 		panic(errors.New(ERR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
 	}

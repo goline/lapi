@@ -24,16 +24,19 @@ func (h *SystemHook) SetUp(connection Connection) error {
 	if (request.Method() != http.MethodPost &&
 		request.Method() != http.MethodPut &&
 		request.Method() != http.MethodPatch) ||
-		request.Route().RequestInput() == nil ||
-		request.Ancestor().Body == nil {
+		request.Route().RequestInput() == nil {
 		return nil
 	}
 
-	body, err := ioutil.ReadAll(request.Ancestor().Body)
+	body := request.Ancestor().Body
+	defer body.Close()
+
+	content, err := ioutil.ReadAll(request.Ancestor().Body)
 	if err != nil {
 		return err
 	}
-	request.WithContentBytes(body, request.Route().RequestInput())
+	request.WithContentBytes(content, request.Route().RequestInput())
+
 	return nil
 }
 
