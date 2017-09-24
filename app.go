@@ -140,7 +140,7 @@ func (a *FactoryApp) SetUp() *FactoryApp {
 	wg.Wait()
 
 	if a.rescuer == nil {
-		a.WithRescuer(NewRescuer())
+		panic(errors.New(ERR_RESCUER_NOT_DEFINED, "App requires a rescuer to be defined"))
 	}
 	PanicOnError(a.container.Inject(a.rescuer))
 	return a
