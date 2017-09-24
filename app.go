@@ -55,7 +55,7 @@ type AppRescuer interface {
 type AppRunner interface {
 	// Run brings application up
 	// Any errors should manage inside this method
-	Run(container Container, config interface{})
+	Run()
 }
 
 func NewApp() App {
@@ -118,19 +118,13 @@ func (a *FactoryApp) WithContainer(container Container) ContainerAware {
 	return a
 }
 
-func (a *FactoryApp) Run(container Container, config interface{}) {
-	if container == nil || config == nil {
-		panic("App requires container and config to run")
-	}
-
-	a.container = container
-	a.config = config
+func (a *FactoryApp) Run() {
 	a.SetUp().Handle()
 }
 
 func (a *FactoryApp) SetUp() *FactoryApp {
 	if a.container == nil {
-		panic("App requires a container to run")
+		panic(errors.New(ERR_CONTAINER_NOT_DEFINED, "App requires a container to run"))
 	}
 
 	var wg sync.WaitGroup
