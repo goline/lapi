@@ -3,7 +3,6 @@ package lapi
 import (
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/goline/errors"
 )
@@ -139,15 +138,9 @@ func (a *FactoryApp) SetUp() *FactoryApp {
 		panic(errors.New(ERR_CONTAINER_NOT_DEFINED, "App requires a container to run"))
 	}
 
-	var wg sync.WaitGroup
 	for _, loader := range a.loaders {
-		wg.Add(1)
-		go func(loader Loader) {
-			defer wg.Done()
-			loader.Load(a)
-		}(loader)
+		loader.Load(a)
 	}
-	wg.Wait()
 
 	if a.rescuer == nil {
 		panic(errors.New(ERR_RESCUER_NOT_DEFINED, "App requires a rescuer to be defined"))
