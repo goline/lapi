@@ -27,6 +27,9 @@ type AppLoader interface {
 type AppConfigger interface {
 	// Config returns application's configuration
 	Config() interface{}
+
+	// WithConfig sets application's config
+	WithConfig(config interface{}) App
 }
 
 // AppRouter handles router
@@ -76,6 +79,11 @@ func (a *FactoryApp) WithLoader(loader Loader) App {
 
 func (a *FactoryApp) Config() interface{} {
 	return a.config
+}
+
+func (a *FactoryApp) WithConfig(config interface{}) App {
+	a.config = config
+	return a
 }
 
 func (a *FactoryApp) Router() Router {
