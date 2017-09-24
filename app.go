@@ -58,6 +58,12 @@ type AppRunner interface {
 	Run()
 }
 
+type AppDryRunner interface {
+	// DryRun brings application up
+	// It should configure and load only
+	DryRun()
+}
+
 func NewApp() App {
 	return &FactoryApp{
 		loaders:   make([]Loader, 0),
@@ -122,6 +128,10 @@ func (a *FactoryApp) WithContainer(container Container) ContainerAware {
 
 func (a *FactoryApp) Run() {
 	a.SetUp().Handle()
+}
+
+func (a *FactoryApp) DryRun() {
+	a.SetUp()
 }
 
 func (a *FactoryApp) SetUp() *FactoryApp {
