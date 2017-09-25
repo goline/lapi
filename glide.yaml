@@ -1,3 +1,7 @@
 package: github.com/goline/lapi
 import:
 - package: github.com/goline/errors
+- package: github.com/onsi/ginkgo
+  version: ~1.4.0
+- package: github.com/onsi/gomega
+  version: ~1.2.0

@@ -1,13 +1,10 @@
-hash: ac7a79073135dcdf11b72031d11340278ebc3f0cd77657bb47e9653cfb0b619d
-updated: 2017-09-25T12:30:24.063913001+07:00
+hash: 3aa49ecfd7435dd696fa316916a69988a38621121dcf80567adeee46dc203bc1
+updated: 2017-09-25T12:49:09.129986763+07:00
 imports:
 - name: github.com/goline/errors
   version: b2371c4c8b19799de259df6fde97621d1b42a059
-- name: github.com/pkg/errors
-  version: 645ef00459ed84a119197bfb8d8205042c6df63d
-testImports:
 - name: github.com/onsi/ginkgo
-  version: 11459a886d9cd66b319dac7ef1e917ee221372c9
+  version: 9eda700730cba42af70d53180f9dcce9266bc2bc
   subpackages:
   - config
   - internal/codelocation
@@ -27,7 +24,7 @@ testImports:
   - reporters/stenographer/support/go-isatty
   - types
 - name: github.com/onsi/gomega
-  version: dcabb60a477c2b6f456df65037cb6708210fbb02
+  version: c893efa28eb45626cdaa76c9f653b62488858837
   subpackages:
   - format
   - internal/assertion
@@ -40,6 +37,9 @@ testImports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+testImports:
 - name: golang.org/x/net
   version: f5079bd7f6f74e23c4d65efa0f4ce14cbd6a3c0f
   subpackages:
