@@ -1,46 +1,40 @@
 package lapi
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestNewConnection(t *testing.T) {
-	c := NewConnection(nil, nil)
-	if c == nil {
-		t.Errorf("Expects c is not nil")
-	}
-}
+var _ = Describe("Connection", func() {
+	It("NewConnection should return an instance of Connection", func() {
+		Expect(NewConnection(nil, nil)).NotTo(BeNil())
+	})
+})
 
-func TestFactoryConnection_Request(t *testing.T) {
-	r := &FactoryRequest{}
-	c := &FactoryConnection{}
-	c.request = r
-	if c.Request() == nil {
-		t.Errorf("Expects request is not nil")
-	}
-}
+var _ = Describe("FactoryConnection", func() {
+	It("Request should return instance of Request", func() {
+		r := &FactoryRequest{}
+		c := &FactoryConnection{}
+		c.request = r
+		Expect(c.Request()).NotTo(BeNil())
+	})
 
-func TestFactoryConnection_WithRequest(t *testing.T) {
-	r := &FactoryRequest{}
-	c := &FactoryConnection{}
-	if c.WithRequest(r).Request() == nil {
-		t.Errorf("Expects request is not nil")
-	}
-}
+	It("WithRequest should set instance of Request", func() {
+		r := &FactoryRequest{}
+		c := &FactoryConnection{}
+		Expect(c.WithRequest(r).Request()).NotTo(BeNil())
+	})
 
-func TestFactoryConnection_Response(t *testing.T) {
-	r := &FactoryResponse{}
-	c := &FactoryConnection{}
-	c.response = r
-	if c.Response() == nil {
-		t.Errorf("Expects response is not nil")
-	}
-}
+	It("Response should return instance of Response", func() {
+		r := &FactoryResponse{}
+		c := &FactoryConnection{}
+		c.response = r
+		Expect(c.Response()).NotTo(BeNil())
+	})
 
-func TestFactoryConnection_WithResponse(t *testing.T) {
-	r := &FactoryResponse{}
-	c := &FactoryConnection{}
-	if c.WithResponse(r).Response() == nil {
-		t.Errorf("Expects response is not nil")
-	}
-}
+	It("WithResponse should set instance of Response", func() {
+		r := &FactoryResponse{}
+		c := &FactoryConnection{}
+		Expect(c.WithResponse(r).Response()).NotTo(BeNil())
+	})
+})

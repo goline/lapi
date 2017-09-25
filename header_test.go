@@ -1,58 +1,50 @@
 package lapi
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestNewHeader(t *testing.T) {
-	h := NewHeader()
-	if _, ok := h.(Header); ok == false {
-		t.Errorf("Expects an instance of Header. Got %+v", h)
-	}
-}
+var _ = Describe("Header", func() {
+	It("NewHeader should return an instance of Header", func() {
+		Expect(NewHeader()).NotTo(BeNil())
+	})
+})
 
-func TestFactoryHeader_Get(t *testing.T) {
-	h := &FactoryHeader{make(map[string]string)}
-	h.items["Content-Type"] = "application/json"
-	values, ok := h.Get("content-Type")
-	if ok == false {
-		t.Errorf("Expects content-Type key to be existed")
-	}
-	if values != "application/json" {
-		t.Errorf("Expects values[0] to be application/json")
-	}
-}
+var _ = Describe("FactoryHeader", func() {
+	It("Get should return a value", func() {
+		h := &FactoryHeader{make(map[string]string)}
+		h.items["Content-Type"] = "application/json"
+		values, ok := h.Get("content-Type")
+		Expect(ok).To(BeTrue())
+		Expect(values).To(Equal("application/json"))
+	})
 
-func TestFactoryHeader_Has(t *testing.T) {
-	h := &FactoryHeader{make(map[string]string)}
-	h.items["Content-Type"] = "application/json"
-	if !h.Has("content-Type") || !h.Has("content-type") || h.Has("ContentType") {
-		t.Errorf("Expects has to return correct")
-	}
-}
+	It("Has should return a boolean", func() {
+		h := &FactoryHeader{make(map[string]string)}
+		h.items["Content-Type"] = "application/json"
+		Expect(h.Has("content-Type")).To(BeTrue())
+		Expect(h.Has("content-type")).To(BeTrue())
+		Expect(h.Has("ContentType")).To(BeFalse())
+	})
 
-func TestFactoryHeader_Set(t *testing.T) {
-	h := &FactoryHeader{make(map[string]string)}
-	h.Set("content-type", "application/json")
-	if h.items["Content-Type"] != "application/json" {
-		t.Errorf("Expects Set to be able to set key-value")
-	}
-}
+	It("Set should set key-value", func() {
+		h := &FactoryHeader{make(map[string]string)}
+		h.Set("content-type", "application/json")
+		Expect(h.items["Content-Type"]).To(Equal("application/json"))
+	})
 
-func TestFactoryHeader_Remove(t *testing.T) {
-	h := &FactoryHeader{make(map[string]string)}
-	h.items["Content-Type"] = "application/json"
-	h.Remove("content-TYPE")
-	if len(h.items) > 0 {
-		t.Errorf("Expects content-TYPE is removed")
-	}
-}
+	It("Remove should delete a key", func() {
+		h := &FactoryHeader{make(map[string]string)}
+		h.items["Content-Type"] = "application/json"
+		h.Remove("content-TYPE")
+		Expect(len(h.items)).To(Equal(0))
+	})
 
-func TestFactoryHeader_All(t *testing.T) {
-	h := &FactoryHeader{make(map[string]string)}
-	h.items["Content-Type"] = "application/json"
-	h.items["Content-Length"] = "1234"
-	if len(h.All()) != 2 {
-		t.Errorf("Expects to get 2 items")
-	}
-}
+	It("All should return all items", func() {
+		h := &FactoryHeader{make(map[string]string)}
+		h.items["Content-Type"] = "application/json"
+		h.items["Content-Length"] = "1234"
+		Expect(len(h.items)).To(Equal(2))
+	})
+})

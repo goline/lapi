@@ -2,23 +2,26 @@ package lapi
 
 import (
 	"errors"
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestPanicOnError(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expects r is not nil")
-		}
-	}()
-	PanicOnError(errors.New("ERROR"))
-}
+var _ = Describe("Utils", func() {
+	It("PanicOnError should panic if there is an error", func() {
+		defer func() {
+			if r := recover(); r == nil {
+				Expect(r).NotTo(BeNil())
+			}
+		}()
+		PanicOnError(errors.New("ERROR"))
+	})
 
-func TestMust(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expects r is not nil")
-		}
-	}()
-	Must(nil, errors.New("ERROR"))
-}
+	It("Must verifies and panics if there is an error", func() {
+		defer func() {
+			if r := recover(); r == nil {
+				Expect(r).NotTo(BeNil())
+			}
+		}()
+		Must(nil, errors.New("ERROR"))
+	})
+})

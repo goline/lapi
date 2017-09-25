@@ -1,85 +1,18 @@
 package lapi
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"reflect"
-	"testing"
 )
 
-func TestNewRoute(t *testing.T) {
-	r := NewRoute("GET", "/v1/test//example", nil)
-	if _, ok := r.(Route); ok == false {
-		t.Errorf("Expect an instance of Route. Got %+v", r)
-	}
-	if r.Name() != "GET__v1_test__example" {
-		t.Errorf("Expects route's name is GET__v1_test__example. Got %v", r.Name())
-	}
-}
-
-func TestFactoryRoute_Name(t *testing.T) {
-	r := &FactoryRoute{}
-	r.name = "my_name"
-	if r.Name() != "my_name" {
-		t.Errorf("Expects route's name is my_name. Got %v", r.Name())
-	}
-}
-
-func TestFactoryRoute_WithName(t *testing.T) {
-	r := &FactoryRoute{}
-	r.WithName("my_name")
-	if r.name != "my_name" {
-		t.Errorf("Expects route's name is my_name. Got %v", r.name)
-	}
-}
-
-func TestFactoryRoute_Host(t *testing.T) {
-	r := &FactoryRoute{}
-	r.host = "abc.com:8888"
-	if r.Host() != "abc.com:8888" {
-		t.Errorf("Expects route's host is abc.com:8888. Got %v", r.Host())
-	}
-}
-
-func TestFactoryRoute_WithHost(t *testing.T) {
-	r := &FactoryRoute{pvHost: &patternVerifier{}}
-	p := "({locale:[a-z]{2}}).abc.com:8888"
-	r.WithHost(p)
-	if r.host != p {
-		t.Errorf("Expects route's host is abc.com:8888. Got %v", r.host)
-	}
-}
-
-func TestFactoryRoute_Method(t *testing.T) {
-	r := &FactoryRoute{}
-	r.method = "PUT"
-	if r.Method() != "PUT" {
-		t.Errorf("Expects route's method is PUT. Got %v", r.Method())
-	}
-}
-
-func TestFactoryRoute_WithMethod(t *testing.T) {
-	r := &FactoryRoute{}
-	r.WithMethod("PUT")
-	if r.method != "PUT" {
-		t.Errorf("Expects route's method is PUT. Got %v", r.method)
-	}
-}
-
-func TestFactoryRoute_Uri(t *testing.T) {
-	r := &FactoryRoute{}
-	r.uri = "/test/api"
-	if r.Uri() != "/test/api" {
-		t.Errorf("Expects route's uri is /test/api. Got %v", r.Uri())
-	}
-}
-
-func TestFactoryRoute_WithUri(t *testing.T) {
-	t.SkipNow()
-	r := &FactoryRoute{}
-	r.WithUri("/test/api")
-	if r.uri != "/test/api" {
-		t.Errorf("Expects route's uri is /test/api. Got %v", r.uri)
-	}
-}
+var _ = Describe("Route", func() {
+	It("NewRoute should return an instance of Route", func() {
+		r := NewRoute("GET", "/v1/test//example", nil)
+		Expect(r).NotTo(BeNil())
+		Expect(r.Name()).To(Equal("GET__v1_test__example"))
+	})
+})
 
 type routeHandler struct{}
 
@@ -87,199 +20,201 @@ func (h *routeHandler) Handle(connection Connection) (interface{}, error) {
 	return nil, nil
 }
 
-func TestFactoryRoute_Handler(t *testing.T) {
-	r := &FactoryRoute{}
-	r.handler = &routeHandler{}
-	if r.Handler() == nil {
-		t.Errorf("Expects route's handler is not nil. Got %v", r.Handler())
-	}
-}
-
-func TestFactoryRoute_WithHandler(t *testing.T) {
-	r := &FactoryRoute{}
-	r.WithHandler(&routeHandler{})
-	if r.handler == nil {
-		t.Errorf("Expects route's handler is not nil. Got %v", r.handler)
-	}
-}
-
 type routeHook struct{}
 
 func (h *routeHook) SetUp(connection Connection) error                                   { return nil }
 func (h *routeHook) TearDown(connection Connection, result interface{}, err error) error { return nil }
 
-func TestFactoryRoute_Hooks(t *testing.T) {
-	r := &FactoryRoute{}
-	r.hooks = make([]Hook, 2)
-	r.hooks[0] = &routeHook{}
-	r.hooks[1] = &routeHook{}
-
-	if len(r.Hooks()) != 2 {
-		t.Errorf("Expects number of route's hooks is 2. Got %v", len(r.Hooks()))
-	}
-}
-
-func TestFactoryRoute_WithHooks(t *testing.T) {
-	r := &FactoryRoute{}
-	if len(r.WithHooks(&routeHook{}, &routeHook{}).Hooks()) != 2 {
-		t.Errorf("Expects number of route's hooks is 2. Got %v", len(r.Hooks()))
-	}
-}
-
-func TestFactoryRoute_WithHook(t *testing.T) {
-	r := &FactoryRoute{}
-	if len(r.WithHook(&routeHook{}).Hooks()) != 1 {
-		t.Errorf("Expects number of route's hooks is 1. Got %d", len(r.Hooks()))
-	}
-}
-
-func TestFactoryRoute_Match_HostEmpty(t *testing.T) {
-	req := NewRequest(nil)
-	req.WithHost("domain.com").
-		WithUri("/test/abc")
-	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-	r.WithUri("/test/({id:\\d+})")
-
-	_, ok := r.Match(req)
-	if ok == true {
-		t.Errorf("Expects ok to be false")
-	}
-}
-
-func TestFactoryRoute_Match_HostNotEmpty(t *testing.T) {
-	req := NewRequest(nil)
-	req.WithHost("en.domain.com").
-		WithUri("/test/55")
-	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-	r.WithUri("/test/({id:\\d+})").WithHost("({locale:[a-z]{2}}).domain.com")
-
-	_, ok := r.Match(req)
-	if ok == false {
-		t.Errorf("Expects ok to be true")
-	}
-
-	locale, ok := req.Param("locale")
-	if ok == false || locale != "en" {
-		t.Errorf("Expects ok to be true and locale is en. Got %s", locale)
-	}
-}
-
-func TestFactoryRoute_Match_UriEmpty(t *testing.T) {
-	req := NewRequest(nil)
-	req.WithHost("domain.com").
-		WithUri("/test/abc")
-	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-
-	_, ok := r.Match(req)
-	if ok == true {
-		t.Errorf("Expects ok to be false")
-	}
-}
-
-func TestFactoryRoute_Match_ZeroKeys(t *testing.T) {
-	req := &FactoryRequest{params: NewBag()}
-	req.WithHost("domain.com").
-		WithUri("/test/abc")
-	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-	r.WithUri("/test/abc")
-
-	_, ok := r.Match(req)
-	if ok == false {
-		t.Errorf("Expects ok to be true")
-	}
-	if len(req.params.All()) > 0 {
-		t.Errorf("Expects no params in request")
-	}
-}
-
 type sampleRequestInput struct{}
 type sampleResponseOutput struct{}
 
-func TestFactoryRoute_RequestInput(t *testing.T) {
-	r := &FactoryRoute{}
-	r.requestInput = reflect.TypeOf(&sampleRequestInput{})
-	if r.RequestInput() == nil {
-		t.Errorf("Expects RequestInput is not nil")
-	}
-}
+var _ = Describe("FactoryRoute", func() {
+	It("Name should return route's name", func() {
+		r := &FactoryRoute{}
+		r.name = "my_name"
+		Expect(r.Name()).To(Equal("my_name"))
+	})
 
-func TestFactoryRoute_WithRequestInput(t *testing.T) {
-	r := &FactoryRoute{}
-	r.requestInput = reflect.TypeOf(&sampleRequestInput{})
-	if r.WithRequestInput(&sampleRequestInput{}).RequestInput() == nil {
-		t.Errorf("Expects RequestInput is not nil")
-	}
-}
+	It("WithName should set route's name", func() {
+		r := &FactoryRoute{}
+		r.WithName("my_name")
+		Expect(r.name).To(Equal("my_name"))
+	})
 
-func TestFactoryRoute_ResponseOutput(t *testing.T) {
-	r := &FactoryRoute{}
-	r.responseOutput = reflect.TypeOf(&sampleResponseOutput{})
-	if r.ResponseOutput() == nil {
-		t.Errorf("Expects ResponseOutput is not nil")
-	}
-}
+	It("Host should return route's host", func() {
+		r := &FactoryRoute{}
+		r.host = "abc.com:8888"
+		Expect(r.Host()).To(Equal("abc.com:8888"))
+	})
 
-func TestFactoryRoute_WithResponseOutput(t *testing.T) {
-	r := &FactoryRoute{}
-	r.responseOutput = reflect.TypeOf(&sampleResponseOutput{})
-	if r.WithResponseOutput(&sampleResponseOutput{}).ResponseOutput() == nil {
-		t.Errorf("Expects ResponseOutput is not nil")
-	}
-}
+	It("WithHost should set route's host", func() {
+		r := &FactoryRoute{pvHost: &patternVerifier{}}
+		p := "({locale:[a-z]{2}}).abc.com:8888"
+		r.WithHost(p)
+		Expect(r.host).To(Equal(p))
+	})
 
-func TestFactoryRoute_Tags(t *testing.T) {
-	r := &FactoryRoute{tags: make([]string, 0)}
-	if len(r.Tags()) != 0 {
-		t.Errorf("Expects number of tags is 0. Got %d", len(r.Tags()))
-	}
-	r.tags = append(r.tags, "a_tag")
-	if len(r.Tags()) != 1 {
-		t.Errorf("Expects number of tags is 1. Got %d", len(r.Tags()))
-	}
-}
+	It("Method should return route's method", func() {
+		r := &FactoryRoute{}
+		r.method = "PUT"
+		Expect(r.Method()).To(Equal("PUT"))
+	})
 
-func TestFactoryRoute_WithTag(t *testing.T) {
-	r := &FactoryRoute{tags: make([]string, 0)}
-	if len(r.WithTag("a_tag").Tags()) != 1 {
-		t.Errorf("Expects number of tags is 1. Got %d", len(r.Tags()))
-	}
-}
+	It("WithMethod should set route's method", func() {
+		r := &FactoryRoute{}
+		r.WithMethod("PUT")
+		Expect(r.method).To(Equal("PUT"))
+	})
 
-func TestFactoryRoute_WithTags(t *testing.T) {
-	r := &FactoryRoute{tags: make([]string, 0)}
-	if len(r.WithTags("a_tag", "another_tag").Tags()) != 2 {
-		t.Errorf("Expects number of tags is 2. Got %d", len(r.Tags()))
-	}
-}
+	It("Uri should return route's uri", func() {
+		r := &FactoryRoute{}
+		r.uri = "/test/api"
+		Expect(r.Uri()).To(Equal("/test/api"))
+	})
 
-func TestFactoryRoute_Match_NoParamsRequest(t *testing.T) {
-	req := &FactoryRequest{params: NewBag()}
-	req.WithUri("/v1/user")
-	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-	r.WithUri("/.*")
+	It("WithUri should set route's uri", func() {
+		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+		r.WithUri("/test/api")
+		Expect(r.uri).To(Equal("/test/api"))
+	})
 
-	_, ok := r.Match(req)
-	if ok == false {
-		t.Errorf("Expects ok to be true")
-	}
+	It("Handler should return route's handler", func() {
+		r := &FactoryRoute{}
+		r.handler = &routeHandler{}
+		Expect(r.Handler()).NotTo(BeNil())
+	})
 
-	if len(req.params.All()) > 0 {
-		t.Errorf("Expects no params in request")
-	}
-}
+	It("WithHandler should set route's handler", func() {
+		r := &FactoryRoute{}
+		r.WithHandler(&routeHandler{})
+		Expect(r.handler).NotTo(BeNil())
+	})
 
-func TestFactoryRoute_Match_NotEnoughParameters(t *testing.T) {
-	req := &FactoryRequest{params: NewBag()}
-	req.WithUri("/v1/user")
-	r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-	r.WithUri("/{uri:.*}")
+	It("Hooks should return route's hooks", func() {
+		r := &FactoryRoute{}
+		r.hooks = make([]Hook, 2)
+		r.hooks[0] = &routeHook{}
+		r.hooks[1] = &routeHook{}
+		Expect(len(r.Hooks())).To(Equal(2))
+	})
 
-	_, ok := r.Match(req)
-	if ok == false {
-		t.Errorf("Expects ok to be true")
-	}
+	It("WithHooks should set route's hooks", func() {
+		r := &FactoryRoute{}
+		Expect(len(r.WithHooks(&routeHook{}, &routeHook{}).Hooks())).To(Equal(2))
+	})
 
-	if len(req.params.All()) > 0 {
-		t.Errorf("Expects no params in request")
-	}
-}
+	It("Hook should return route's hook", func() {
+		r := &FactoryRoute{}
+		Expect(len(r.WithHook(&routeHook{}).Hooks())).To(Equal(1))
+	})
+
+	It("Match should match empty host", func() {
+		req := NewRequest(nil)
+		req.WithHost("domain.com").
+			WithUri("/test/abc")
+		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+		r.WithUri("/test/({id:\\d+})")
+
+		_, ok := r.Match(req)
+		Expect(ok).To(BeFalse())
+	})
+
+	It("Match should verify host not empty", func() {
+		req := NewRequest(nil)
+		req.WithHost("en.domain.com").
+			WithUri("/test/55")
+		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+		r.WithUri("/test/({id:\\d+})").WithHost("({locale:[a-z]{2}}).domain.com")
+
+		_, ok := r.Match(req)
+		Expect(ok).To(BeTrue())
+
+		locale, ok := req.Param("locale")
+		Expect(ok).To(BeTrue())
+		Expect(locale).To(Equal("en"))
+	})
+
+	It("Match should verify uri empty", func() {
+		req := NewRequest(nil)
+		req.WithHost("domain.com").
+			WithUri("/test/abc")
+		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+
+		_, ok := r.Match(req)
+		Expect(ok).To(BeFalse())
+	})
+
+	It("Match should verify no keys", func() {
+		req := &FactoryRequest{params: NewBag()}
+		req.WithHost("domain.com").
+			WithUri("/test/abc")
+		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+		r.WithUri("/test/abc")
+
+		_, ok := r.Match(req)
+		Expect(ok).To(BeTrue())
+		Expect(len(req.params.All())).To(BeZero())
+	})
+
+	It("Match should request without parameters", func() {
+		req := &FactoryRequest{params: NewBag()}
+		req.WithUri("/v1/user")
+		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+		r.WithUri("/.*")
+
+		_, ok := r.Match(req)
+		Expect(ok).To(BeTrue())
+		Expect(len(req.params.All())).To(BeZero())
+	})
+
+	It("Match should request not enough parameters", func() {
+		req := &FactoryRequest{params: NewBag()}
+		req.WithUri("/v1/user")
+		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
+		r.WithUri("/{uri:.*}")
+
+		_, ok := r.Match(req)
+		Expect(ok).To(BeTrue())
+		Expect(len(req.params.All())).To(BeZero())
+	})
+
+	It("RequestInput should return an object", func() {
+		r := &FactoryRoute{}
+		r.requestInput = reflect.TypeOf(&sampleRequestInput{})
+		Expect(r.RequestInput()).NotTo(BeNil())
+	})
+
+	It("WithRequestInput should set route input", func() {
+		r := &FactoryRoute{}
+		Expect(r.WithRequestInput(&sampleRequestInput{}).RequestInput()).NotTo(BeNil())
+	})
+
+	It("ResponseOutput should return an object", func() {
+		r := &FactoryRoute{}
+		r.responseOutput = reflect.TypeOf(&sampleResponseOutput{})
+		Expect(r.ResponseOutput()).NotTo(BeNil())
+	})
+
+	It("WithResponseOutput should set route input", func() {
+		r := &FactoryRoute{}
+		Expect(r.WithResponseOutput(&sampleResponseOutput{}).ResponseOutput()).NotTo(BeNil())
+	})
+
+	It("Tags should return route's tags", func() {
+		r := &FactoryRoute{tags: make([]string, 0)}
+		Expect(len(r.tags)).To(BeZero())
+
+		r.tags = append(r.tags, "a_tag")
+		Expect(len(r.tags)).To(Equal(1))
+	})
+
+	It("WithTag should add route tag", func() {
+		r := &FactoryRoute{tags: make([]string, 0)}
+		Expect(len(r.WithTag("a_tag").Tags())).To(Equal(1))
+	})
+
+	It("WithTags should add route tags", func() {
+		r := &FactoryRoute{tags: make([]string, 0)}
+		Expect(len(r.WithTags("a_tag", "another_tag").Tags())).To(Equal(2))
+	})
+})

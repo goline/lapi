@@ -1,60 +1,51 @@
 package lapi
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestNewBag(t *testing.T) {
-	b := NewBag()
-	if _, ok := b.(Bag); ok == false {
-		t.Errorf("Expect an instance of Bag. Got %+v", b)
-	}
-}
+var _ = Describe("Bag", func() {
+	It("NewBag should return an instance of Bag", func() {
+		Expect(NewBag()).NotTo(BeNil())
+	})
+})
 
-func TestFactoryBag_Get(t *testing.T) {
-	b := &FactoryBag{make(map[string]interface{})}
-	b.items["my_key"] = "my_value"
-	if v, ok := b.Get("my_key"); v != "my_value" || ok == false {
-		t.Errorf("Expects my_key equals my_value. Got %+v", v)
-	}
-}
+var _ = Describe("FactoryBag", func() {
+	It("Get should return a value", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		b.items["my_key"] = "my_value"
+		v, ok := b.Get("my_key")
+		Expect(v).To(Equal("my_value"))
+		Expect(ok).To(BeTrue())
+	})
 
-func TestFactoryBag_Has(t *testing.T) {
-	b := &FactoryBag{make(map[string]interface{})}
-	b.items["my_key"] = "my_value"
-	if b.Has("my_key") == false {
-		t.Errorf("Expects my_key exists")
-	}
-	if b.Has("my_another_key") == true {
-		t.Errorf("Expects my_another_key not exist")
-	}
-}
+	It("Has should return a boolean", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		b.items["my_key"] = "my_value"
+		Expect(b.Has("my_key")).To(BeTrue())
+		Expect(b.Has("my_another_key")).To(BeFalse())
+	})
 
-func TestFactoryBag_Set(t *testing.T) {
-	b := &FactoryBag{make(map[string]interface{})}
-	if b.Has("my_key") == false {
+	It("Set should allow to set value", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		Expect(b.Has("my_key")).To(BeFalse())
 		b.Set("my_key", "my_value")
-		if b.Has("my_key") == false {
-			t.Errorf("Expects my_key exists")
-		}
-	}
-}
+		Expect(b.Has("my_key")).To(BeTrue())
+	})
 
-func TestFactoryBag_Remove(t *testing.T) {
-	b := &FactoryBag{make(map[string]interface{})}
-	b.items["my_key"] = "my_value"
-	b.Remove("my_key")
-	if _, ok := b.Get("my_key"); ok == true {
-		t.Errorf("Expects my_key is removed")
-	}
-}
+	It("Remove should allow to remove a key", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		b.items["my_key"] = "my_value"
+		Expect(b.Has("my_key")).To(BeTrue())
+		b.Remove("my_key")
+		Expect(b.Has("my_key")).To(BeFalse())
+	})
 
-func TestFactoryBag_All(t *testing.T) {
-	b := &FactoryBag{make(map[string]interface{})}
-	b.items["my_key"] = "my_value"
-	b.items["my_another_key"] = 1
-	a := b.All()
-	if len(a) != 2 {
-		t.Errorf("Expects a only has 2 items")
-	}
-}
+	It("All should return all items", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		b.items["my_key"] = "my_value"
+		b.items["my_another_key"] = 1
+		Expect(len(b.All())).To(Equal(2))
+	})
+})

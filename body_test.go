@@ -1,70 +1,19 @@
 package lapi
 
 import (
-	"testing"
-
 	"github.com/goline/errors"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestNewBody(t *testing.T) {
-	b := NewBody()
-	if b == nil {
-		t.Errorf("Expects b is not nil")
-	}
-}
+var _ = Describe("Body", func() {
+	It("NewBody should return an instance of Body", func() {
+		Expect(NewBag()).NotTo(BeNil())
+	})
+})
 
-func TestFactoryBody_Charset(t *testing.T) {
-	b := &FactoryBody{}
-	b.charset = "UTF-8"
-	if b.Charset() != "UTF-8" {
-		t.Errorf("Expects charset is UTF-8. Got %s", b.Charset())
-	}
-}
-
-func TestFactoryBody_WithCharset(t *testing.T) {
-	b := &FactoryBody{}
-	b.WithCharset("UTF-8")
-	if b.charset != "UTF-8" {
-		t.Errorf("Expects charset is UTF-8. Got %s", b.charset)
-	}
-}
-
-func TestFactoryBody_Content(t *testing.T) {
-	b := &FactoryBody{}
-	if b.content != nil || b.err != nil {
-		t.Errorf("Expects content and err is nil. Got %v, %v", b.content, b.err)
-	}
-
-	b.content = "a_string"
-	if c, err := b.Content(); err != nil || c != "a_string" {
-		t.Errorf("Expects content and err are correct. Got %v, %v", c, err)
-	}
-}
-
-type sampleItem struct {
+type sampleBodyItem struct {
 	Price float64 `json:"price"`
-}
-
-func TestFactoryBody_WithContent(t *testing.T) {
-	b := &FactoryBody{ParserManager: NewParserManager()}
-	b.WithContent("a_string")
-	if b.err == nil {
-		t.Errorf("Expects err is not nil")
-	}
-	if e, ok := b.err.(errors.Error); ok == false || e.Code() != ERR_NO_PARSER_FOUND {
-		t.Errorf("Expects err is SystemError. Got %v", b.err)
-	}
-
-	b.WithParser(new(JsonParser))
-	b.WithContentType(CONTENT_TYPE_JSON)
-	v := &sampleItem{Price: 5.67}
-	b.WithContent(v)
-	if b.err != nil {
-		t.Errorf("Expects err is nil")
-	}
-	if string(b.contentBytes) != "{\"price\":5.67}" {
-		t.Errorf("Expects content is set correctly. Got %s", string(b.contentBytes))
-	}
 }
 
 type sampleParserForBody struct{}
@@ -79,74 +28,99 @@ func (p *sampleParserForBody) ContentType() string {
 	return CONTENT_TYPE_JSON
 }
 
-func TestFactoryBody_WithContent_ErrorEncoding(t *testing.T) {
-	b := &FactoryBody{ParserManager: NewParserManager()}
-	b.WithParser(new(sampleParserForBody))
-	b.WithContentType(CONTENT_TYPE_JSON)
-	b.WithContent("a_string")
-	if b.err == nil {
-		t.Errorf("Expects err is not nil")
-	}
-}
+var _ = Describe("FactoryBody", func() {
+	It("Charset should return UTF-8", func() {
+		b := &FactoryBody{}
+		b.charset = "UTF-8"
+		Expect(b.Charset()).To(Equal("UTF-8"))
+	})
 
-func TestFactoryBody_ContentBytes(t *testing.T) {
-	b := &FactoryBody{}
-	if len(b.contentBytes) != 0 || b.err != nil {
-		t.Errorf("Expects contentBytes is empty and err is nil. Got %v, %v", b.contentBytes, b.err)
-	}
+	It("WithCharset should allow to set charset", func() {
+		b := &FactoryBody{}
+		b.WithCharset("UTF-8")
+		Expect(b.charset).To(Equal("UTF-8"))
+	})
 
-	b.contentBytes = []byte("a_string")
-	if bb, err := b.ContentBytes(); len(bb) == 0 || err != nil {
-		t.Errorf("Expects bb is not empty and err is nil. Got %v, %v", bb, err)
-	}
-}
+	It("Content should return bytes value", func() {
+		b := &FactoryBody{}
+		Expect(b.content).To(BeNil())
+		Expect(b.err).To(BeNil())
 
-func TestFactoryBody_WithContentBytes(t *testing.T) {
-	b := &FactoryBody{ParserManager: NewParserManager()}
-	b.WithContentBytes([]byte("a_string"), nil)
-	if b.err != nil || b.contentBytes == nil || b.content != nil {
-		t.Errorf("Expects content is set correctly")
-	}
+		b.content = "a_string"
+		Expect(b.content).To(Equal("a_string"))
+		Expect(b.err).To(BeNil())
+	})
 
-	b.WithContentType(CONTENT_TYPE_XML)
-	b.WithContentBytes([]byte("a_string"), nil)
-	if b.err == nil {
-		t.Errorf("Expects err is not nil")
-	}
+	It("WithContent should return error code ERR_NO_PARSER_FOUND", func() {
+		b := &FactoryBody{ParserManager: NewParserManager()}
+		b.WithContent("a_string")
+		Expect(b.err).NotTo(BeNil())
+		Expect(b.err.(errors.Error).Code()).To(Equal(ERR_NO_PARSER_FOUND))
+	})
 
-	v := &sampleItem{}
-	b.WithParser(new(JsonParser))
-	b.WithContentType(CONTENT_TYPE_JSON)
-	b.WithContentBytes([]byte("{\"price\":5.67}"), v)
-	if b.err != nil {
-		t.Errorf("Expects err is nil. Got %v", b.err)
-	}
-	if v.Price != 5.67 {
-		t.Errorf("Expects content is set correctly. Got %v", v)
-	}
-}
+	It("WithContent should allow to set content", func() {
+		b := &FactoryBody{ParserManager: NewParserManager()}
+		b.WithParser(new(JsonParser))
+		b.WithContentType(CONTENT_TYPE_JSON)
+		b.WithContent(&sampleBodyItem{Price: 5.67})
+		Expect(b.err).To(BeNil())
+		Expect(string(b.contentBytes)).To(Equal("{\"price\":5.67}"))
+	})
 
-func TestFactoryBody_WithContentBytes_ErrorDecoding(t *testing.T) {
-	b := &FactoryBody{ParserManager: NewParserManager()}
-	b.WithParser(new(sampleParserForBody))
-	b.WithContentType(CONTENT_TYPE_JSON)
-	b.WithContentBytes([]byte("a_string"), nil)
-	if b.err == nil {
-		t.Errorf("Expects err is not nil")
-	}
-}
+	It("WithContent should make an error when parsing invalid content", func() {
+		b := &FactoryBody{ParserManager: NewParserManager()}
+		b.WithParser(new(sampleParserForBody))
+		b.WithContentType(CONTENT_TYPE_JSON)
+		b.WithContent("a_string")
+		Expect(b.err).NotTo(BeNil())
+		Expect(b.err.(errors.Error).Code()).To(Equal(ERR_PARSE_ENCODE_FAILURE))
+	})
 
-func TestFactoryBody_ContentType(t *testing.T) {
-	b := &FactoryBody{}
-	b.contentType = CONTENT_TYPE_XML
-	if b.ContentType() != CONTENT_TYPE_XML {
-		t.Errorf("Expects contentType is xml. Got %s", b.ContentType())
-	}
-}
+	It("ContentBytes should return bytes equivalent to a_string", func() {
+		b := &FactoryBody{}
+		b.contentBytes = []byte("a_string")
 
-func TestFactoryBody_WithContentType(t *testing.T) {
-	b := &FactoryBody{}
-	if b.WithContentType(CONTENT_TYPE_XML).ContentType() != CONTENT_TYPE_XML {
-		t.Errorf("Expects contentType is xml. Got %s", b.ContentType())
-	}
-}
+		bb, err := b.ContentBytes()
+		Expect(err).To(BeNil())
+		Expect(bb).To(Equal([]byte("a_string")))
+	})
+
+	It("WithContentBytes should allow to set content bytes", func() {
+		b := &FactoryBody{ParserManager: NewParserManager()}
+		b.WithContentBytes([]byte("a_string"), nil)
+		Expect(b.err).To(BeNil())
+		Expect(b.contentBytes).NotTo(BeNil())
+		Expect(b.content).To(BeNil())
+
+		b.WithContentType(CONTENT_TYPE_XML)
+		b.WithContentBytes([]byte("a_string"), nil)
+		Expect(b.err).NotTo(BeNil())
+
+		v := &sampleBodyItem{}
+		b.WithParser(new(JsonParser))
+		b.WithContentType(CONTENT_TYPE_JSON)
+		b.WithContentBytes([]byte("{\"price\":5.67}"), v)
+		Expect(b.err).To(BeNil())
+		Expect(v.Price).To(Equal(5.67))
+	})
+
+	It("WithContentBytes should return error code ERR_PARSE_DECODE_FAILURE", func() {
+		b := &FactoryBody{ParserManager: NewParserManager()}
+		b.WithParser(new(sampleParserForBody))
+		b.WithContentType(CONTENT_TYPE_JSON)
+		b.WithContentBytes([]byte("a_string"), nil)
+		Expect(b.err).NotTo(BeNil())
+		Expect(b.err.(errors.Error).Code()).To(Equal(ERR_PARSE_DECODE_FAILURE))
+	})
+
+	It("ContentType should return a string represents for content-type", func() {
+		b := &FactoryBody{}
+		b.contentType = CONTENT_TYPE_XML
+		Expect(b.ContentType()).To(Equal(CONTENT_TYPE_XML))
+	})
+
+	It("WithContentType should allow to set content-type", func() {
+		b := &FactoryBody{}
+		Expect(b.WithContentType(CONTENT_TYPE_XML).ContentType()).To(Equal(CONTENT_TYPE_XML))
+	})
+})

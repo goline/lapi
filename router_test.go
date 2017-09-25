@@ -2,244 +2,212 @@ package lapi
 
 import (
 	"net/http"
-	"testing"
 
 	"github.com/goline/errors"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestNewRouter(t *testing.T) {
-	r := NewRouter()
-	if r == nil {
-		t.Errorf("Expects r is not nil")
-	}
-}
+var _ = Describe("Router", func() {
+	It("NewRouter should return an instance of Router", func() {
+		Expect(NewRouter()).NotTo(BeNil())
+	})
 
-func TestNewGroupRouter(t *testing.T) {
-	r := NewRouter()
-	g := NewGroupRouter(r, "/account")
-	if g == nil {
-		t.Errorf("Expects g is not nil")
-	}
-}
+	It("NewGroupRouter should return an instance of Router", func() {
+		Expect(NewGroupRouter(NewRouter(), "/account")).NotTo(BeNil())
+	})
+})
 
-func TestFactoryRouter_ByName(t *testing.T) {
-	r := NewRouter()
-	r.Get("/test", nil)
-	r.Get("/test/2", nil).WithName("abc")
-	if route, ok := r.ByName("GET__test"); ok == false || route.Uri() != "/test" {
-		t.Errorf("Expects uri is /test. Got %v", route)
-	}
-	if route, ok := r.ByName("abc"); ok == false || route.Uri() != "/test/2" {
-		t.Errorf("Expects uri is /test/2. Got %v", route)
-	}
-}
+var _ = Describe("FactoryRouter", func() {
+	It("ByName should return route by name", func() {
+		r := NewRouter()
+		r.Get("/test", nil)
+		r.Get("/test/2", nil).WithName("abc")
 
-func TestFactoryRouter_Remove(t *testing.T) {
-	r := NewRouter()
-	r.Get("/test", nil)
-	r.Get("/test/2", nil).WithName("abc")
-	if len(r.Routes()) != 2 {
-		t.Errorf("Expects router has 2 routes. Got %d", len(r.Routes()))
-	}
-	r.Remove("abc")
-	if len(r.Routes()) != 1 {
-		t.Errorf("Expects router has 1 routes. Got %d", len(r.Routes()))
-	}
-	_, ok := r.ByName("abc")
-	if ok == true {
-		t.Errorf("Expects route's name abc is not removed")
-	}
-}
+		route, ok := r.ByName("GET__test")
+		Expect(ok).To(BeTrue())
+		Expect(route.Uri()).To(Equal("/test"))
 
-func TestFactoryRouter_Set(t *testing.T) {
-	r := NewRouter()
-	r.Get("/test", nil)
-	r.Get("/test/2", nil).WithName("abc")
-	r.Set("abc", NewRoute("GET", "/test/abc", nil))
-	if route, ok := r.ByName("abc"); ok == false || route.Uri() != "/test/abc" || route.Name() != "abc" {
-		t.Errorf("Expects route is set correctly. Got %v", route)
-	}
-}
+		route, ok = r.ByName("abc")
+		Expect(ok).To(BeTrue())
+		Expect(route.Uri()).To(Equal("/test/2"))
+	})
 
-func TestFactoryRouter_Group(t *testing.T) {
-	r := NewRouter()
-	g := r.Group("/auth")
-	route := g.Get("/user", nil)
-	if route.Uri() != "/auth/user" {
-		t.Errorf("Expects group router is working as expected. Got %s", route.Uri())
-	}
-}
+	It("Remove should delete a route", func() {
+		r := NewRouter()
+		r.Get("/test", nil)
+		r.Get("/test/2", nil).WithName("abc")
+		Expect(len(r.Routes())).To(Equal(2))
 
-func TestFactoryRouter_Get(t *testing.T) {
-	r := NewRouter()
-	r.Get("/test", nil).WithName("m")
-	route, ok := r.ByName("m")
-	if ok == false || route.Method() != http.MethodGet {
-		t.Errorf("Expects router could register GET method. Got %s", route.Method())
-	}
-}
+		r.Remove("abc")
+		Expect(len(r.Routes())).To(Equal(1))
 
-func TestFactoryRouter_Post(t *testing.T) {
-	r := NewRouter()
-	r.Post("/test", nil).WithName("m")
-	route, ok := r.ByName("m")
-	if ok == false || route.Method() != http.MethodPost {
-		t.Errorf("Expects router could register POST method. Got %s", route.Method())
-	}
-}
+		_, ok := r.ByName("abc")
+		Expect(ok).To(BeFalse())
+	})
 
-func TestFactoryRouter_Put(t *testing.T) {
-	r := NewRouter()
-	r.Put("/test", nil).WithName("m")
-	route, ok := r.ByName("m")
-	if ok == false || route.Method() != http.MethodPut {
-		t.Errorf("Expects router could register PUT method. Got %s", route.Method())
-	}
-}
+	It("Set should set a route", func() {
+		r := NewRouter()
+		r.Get("/test", nil)
+		r.Get("/test/2", nil).WithName("abc")
+		r.Set("abc", NewRoute("GET", "/test/abc", nil))
+		route, ok := r.ByName("abc")
+		Expect(ok).To(BeTrue())
+		Expect(route.Uri()).To(Equal("/test/abc"))
+		Expect(route.Name()).To(Equal("abc"))
+	})
 
-func TestFactoryRouter_Patch(t *testing.T) {
-	r := NewRouter()
-	r.Patch("/test", nil).WithName("m")
-	route, ok := r.ByName("m")
-	if ok == false || route.Method() != http.MethodPatch {
-		t.Errorf("Expects router could register PATCH method. Got %s", route.Method())
-	}
-}
+	It("Group should group routes", func() {
+		r := NewRouter()
+		g := r.Group("/auth")
+		route := g.Get("/user", nil)
+		Expect(route.Uri()).To(Equal("/auth/user"))
+	})
 
-func TestFactoryRouter_Delete(t *testing.T) {
-	r := NewRouter()
-	r.Delete("/test", nil).WithName("m")
-	route, ok := r.ByName("m")
-	if ok == false || route.Method() != http.MethodDelete {
-		t.Errorf("Expects router could register DELETE method. Got %s", route.Method())
-	}
-}
+	It("Get should register GET route", func() {
+		r := NewRouter()
+		r.Get("/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(http.MethodGet))
+	})
 
-func TestFactoryRouter_Head(t *testing.T) {
-	r := NewRouter()
-	r.Head("/test", nil).WithName("m")
-	route, ok := r.ByName("m")
-	if ok == false || route.Method() != http.MethodHead {
-		t.Errorf("Expects router could register HEAD method. Got %s", route.Method())
-	}
-}
+	It("Post should register POST route", func() {
+		r := NewRouter()
+		r.Post("/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(http.MethodPost))
+	})
 
-func TestFactoryRouter_Options(t *testing.T) {
-	r := NewRouter()
-	r.Options("/test", nil).WithName("m")
-	route, ok := r.ByName("m")
-	if ok == false || route.Method() != http.MethodOptions {
-		t.Errorf("Expects router could register OPTIONS method. Got %s", route.Method())
-	}
-}
+	It("Put should register PUT route", func() {
+		r := NewRouter()
+		r.Put("/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(http.MethodPut))
+	})
 
-func TestFactoryRouter_Register(t *testing.T) {
-	r := NewRouter()
-	r.Register(http.MethodPost, "/test", nil).WithName("m")
-	route, ok := r.ByName("m")
-	if ok == false || route.Method() != http.MethodPost {
-		t.Errorf("Expects router could register POST method. Got %s", route.Method())
-	}
-}
+	It("Patch should register PATCH route", func() {
+		r := NewRouter()
+		r.Patch("/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(http.MethodPatch))
+	})
 
-func TestFactoryRouter_Routes(t *testing.T) {
-	r := NewRouter()
-	r.Get("/test", nil)
-	r.Register(http.MethodPost, "/test", nil)
-	if len(r.Routes()) != 2 {
-		t.Errorf("Expects router has 2 routes. Got %d", len(r.Routes()))
-	}
-}
+	It("Delete should register DELETE route", func() {
+		r := NewRouter()
+		r.Delete("/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(http.MethodDelete))
+	})
 
-func TestFactoryRouter_Duplicate_RouteName(t *testing.T) {
-	r := NewRouter()
-	defer func(router Router) {
-		if r := recover(); r != nil {
-			if len(router.Routes()) != 1 {
-				t.Errorf("Expects only one route is registered")
+	It("Head should register HEAD route", func() {
+		r := NewRouter()
+		r.Head("/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(http.MethodHead))
+	})
+
+	It("Options should register OPTIONS route", func() {
+		r := NewRouter()
+		r.Options("/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(http.MethodOptions))
+	})
+
+	It("Register should register a route", func() {
+		r := NewRouter()
+		r.Register(http.MethodOptions, "/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(http.MethodOptions))
+	})
+
+	It("Routes should return all routes", func() {
+		r := NewRouter()
+		r.Get("/test", nil)
+		r.Register(http.MethodPost, "/test", nil)
+		Expect(len(r.Routes())).To(Equal(2))
+	})
+
+	It("Routes should panic with error code ERR_ROUTER_DUPLICATE_ROUTE_NAME", func() {
+		r := NewRouter()
+		defer func(router Router) {
+			if r := recover(); r != nil {
+				Expect(len(router.Routes())).To(Equal(1))
+				Expect(r.(errors.Error).Code()).To(Equal(ERR_ROUTER_DUPLICATE_ROUTE_NAME))
 			}
-		}
-	}(r)
-	r.Get("/test", nil)
-	r.Get("/test", nil)
-}
+		}(r)
+		r.Get("/test", nil)
+		r.Get("/test", nil)
+	})
 
-func TestFactoryRouter_Route(t *testing.T) {
-	r := &FactoryRouter{routes: make([]Route, 0)}
-	r.Get("/test", nil).WithName("Get_Test")
-	r.Post("/test", nil).WithName("Post_Test")
-	req := NewRequest(nil)
-	req.WithMethod(http.MethodPost).WithUri("/test")
-	err := r.Route(req)
-	if err != nil {
-		t.Errorf("Expects err to be nil. Got %v", err)
-	}
-	if req.Route().Name() != "Post_Test" {
-		t.Errorf("Expects matched route's name to be Post_Test. Got %s", req.Route().Name())
-	}
-}
+	It("Route should route request", func() {
+		r := &FactoryRouter{routes: make([]Route, 0)}
+		r.Get("/test", nil).WithName("Get_Test")
+		r.Post("/test", nil).WithName("Post_Test")
+		req := NewRequest(nil)
+		req.WithMethod(http.MethodPost).WithUri("/test")
+		err := r.Route(req)
+		Expect(err).To(BeNil())
+		Expect(req.Route().Name()).To(Equal("Post_Test"))
+	})
 
-func TestFactoryRouter_Route_NotFound(t *testing.T) {
-	r := &FactoryRouter{routes: make([]Route, 0)}
-	r.Get("/test", nil).WithName("Get_Test")
-	req := NewRequest(nil)
-	req.WithMethod(http.MethodPost).WithUri("/test")
-	err := r.Route(req)
-	if err == nil {
-		t.Errorf("Expects err to be not nil")
-	}
-	if e, ok := err.(errors.Error); ok == false || e.Code() != ERR_HTTP_NOT_FOUND {
-		t.Errorf("Expects err code is ERR_HTTP_NOT_FOUND. Got %s", e.Code())
-	}
-}
+	It("Route should return error code ERR_HTTP_NOT_FOUND", func() {
+		r := &FactoryRouter{routes: make([]Route, 0)}
+		r.Get("/test", nil).WithName("Get_Test")
+		req := NewRequest(nil)
+		req.WithMethod(http.MethodPost).WithUri("/test")
+		err := r.Route(req)
+		Expect(err).NotTo(BeNil())
+		Expect(err.(errors.Error).Code()).To(Equal(ERR_HTTP_NOT_FOUND))
+	})
 
-func TestFactoryRouter_WithHook(t *testing.T) {
-	r := &FactoryRouter{routes: make([]Route, 0)}
-	r.Register("GET", "/test", nil).WithName("my_route")
-	r.WithHook(&routeHook{})
-	if route, ok := r.ByName("my_route"); ok == false || len(route.Hooks()) != 1 {
-		t.Errorf("Expects hook has been added. Got %d hooks", len(route.Hooks()))
-	}
-}
+	It("WithHook should register hook for all routes", func() {
+		r := &FactoryRouter{routes: make([]Route, 0)}
+		r.Register("GET", "/test", nil).WithName("my_route")
+		r.WithHook(&routeHook{})
+		route, ok := r.ByName("my_route")
+		Expect(ok).To(BeTrue())
+		Expect(len(route.Hooks())).To(Equal(1))
+	})
 
-func TestFactoryRouter_WithTag(t *testing.T) {
-	r := &FactoryRouter{routes: make([]Route, 0)}
-	r.Register("GET", "/test", nil).WithName("my_route")
-	r.WithTag("V2")
-	if route, ok := r.ByName("my_route"); ok == false || len(route.Tags()) != 1 {
-		t.Errorf("Expects tag has been added. Got %d tags", len(route.Tags()))
-	}
-}
+	It("WithTag should register hook for all routes", func() {
+		r := &FactoryRouter{routes: make([]Route, 0)}
+		r.Register("GET", "/test", nil).WithName("my_route")
+		r.WithTag("V2")
+		route, ok := r.ByName("my_route")
+		Expect(ok).To(BeTrue())
+		Expect(len(route.Tags())).To(Equal(1))
+	})
 
-func TestFactoryRouter_routeIndex(t *testing.T) {
-	r := &FactoryRouter{routes: make([]Route, 0)}
-	r.Register("GET", "/test", nil).WithName("my_route")
-	i, ok := r.routeIndex("my_other_route")
-	if i != -1 || ok != false {
-		t.Errorf("Expects my_other_route is not found. Got %d", i)
-	}
-}
+	It("WithRoute should register a route", func() {
+		r := &FactoryRouter{routes: make([]Route, 0)}
+		r.WithRoute(NewRoute("GET", "/test", nil))
+		Expect(len(r.routes)).To(Equal(1))
+	})
 
-func TestFactoryRouter_Copy(t *testing.T) {
-	r1 := &FactoryRouter{routes: make([]Route, 0)}
-	r2 := &FactoryRouter{routes: make([]Route, 0)}
+	It("routeIndex should return route position", func() {
+		r := &FactoryRouter{routes: make([]Route, 0)}
+		r.Register("GET", "/test", nil).WithName("my_route")
+		i, ok := r.routeIndex("my_other_route")
+		Expect(ok).To(BeFalse())
+		Expect(i).To(Equal(-1))
+	})
 
-	r1.Register("Get", "/test", nil)
-	r2.Register("Post", "/test", nil)
-	if len(r1.routes) != 1 || len(r2.routes) != 1 {
-		t.Errorf("Expects number of routes is 1 for r1 and r2. Got %d and %d", len(r1.routes), len(r2.routes))
-	}
+	It("Copy should copy all routes to another router", func() {
+		r1 := &FactoryRouter{routes: make([]Route, 0)}
+		r2 := &FactoryRouter{routes: make([]Route, 0)}
 
-	l := len(r1.Copy(r2).Routes())
-	if l != 2 {
-		t.Errorf("Expects r2's routes are copied to r1. Got %d routes", l)
-	}
-}
-
-func TestFactoryRouter_WithRoute(t *testing.T) {
-	r := &FactoryRouter{routes: make([]Route, 0)}
-	r.WithRoute(NewRoute("GET", "/test", nil))
-	if len(r.routes) != 1 {
-		t.Errorf("Expects router has 1 route. Got %d", len(r.routes))
-	}
-}
+		r1.Register("Get", "/test", nil)
+		r2.Register("Post", "/test", nil)
+		Expect(len(r1.routes)).To(Equal(1))
+		Expect(len(r2.routes)).To(Equal(1))
+		Expect(len(r1.Copy(r2).Routes())).To(Equal(2))
+	})
+})
