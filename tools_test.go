@@ -2,6 +2,8 @@ package lapi
 
 import (
 	"errors"
+
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -23,5 +25,20 @@ var _ = Describe("Utils", func() {
 			}
 		}()
 		Must(nil, errors.New("ERROR"))
+	})
+
+	It("Parallel should run functions by order", func() {
+		m := make(map[int][]interface{})
+		m[2] = []interface{}{"a", "b"}
+		m[0] = []interface{}{"d", "e"}
+		m[5] = []interface{}{"g"}
+		s := make([]string, 0)
+		Parallel(m, func(item interface{}) {
+			i := item.(string)
+			s = append(s, i)
+		})
+		Expect(len(s)).To(Equal(5))
+		Expect(s).To(Equal([]string{"e", "d", "b", "a", "g"}))
+		fmt.Println(m)
 	})
 })

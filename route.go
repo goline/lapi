@@ -105,7 +105,7 @@ func NewRoute(method string, uri string, handler Handler) Route {
 	r := &FactoryRoute{
 		pvHost: &patternVerifier{},
 		pvUri:  &patternVerifier{},
-		hooks:  make([]Hook, 0),
+		hooks:  make(map[int][]interface{}),
 		tags:   make([]string, 0),
 	}
 	return r.
@@ -121,7 +121,7 @@ type FactoryRoute struct {
 	method         string
 	uri            string
 	handler        Handler
-	hooks          []Hook
+	hooks          map[int][]interface{}
 	pvHost         *patternVerifier
 	pvUri          *patternVerifier
 	requestInput   reflect.Type
@@ -189,16 +189,31 @@ func (r *FactoryRoute) WithHandler(handler Handler) Route {
 }
 
 func (r *FactoryRoute) Hooks() []Hook {
-	return r.hooks
+	hooks := make([]Hook, 0)
+	for _, items := range r.hooks {
+		for _, item := range items {
+			if h, ok := item.(Hook); ok == true {
+				hooks = append(hooks, h)
+			}
+		}
+	}
+	return hooks
 }
 
 func (r *FactoryRoute) WithHooks(hooks ...Hook) Route {
-	r.hooks = hooks
+	r.hooks = make(map[int][]interface{})
+	for _, hook := range hooks {
+		r.WithHook(hook)
+	}
 	return r
 }
 
 func (r *FactoryRoute) WithHook(hook Hook) Route {
-	r.hooks = append(r.hooks, hook)
+	p := PRIORITY_DEFAULT
+	if h, ok := hook.(Prioritizer); ok == true {
+		p = h.Priority()
+	}
+	r.hooks[p] = append(r.hooks[p], hook)
 	return r
 }
 

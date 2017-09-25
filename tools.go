@@ -1,8 +1,11 @@
 package lapi
 
 import (
-	"github.com/goline/errors"
 	"reflect"
+	"sort"
+	"sync"
+
+	"github.com/goline/errors"
 )
 
 // PanicOnError panics if input value is an error
@@ -31,6 +34,7 @@ func Clone(t reflect.Type) interface{} {
 	}
 }
 
+// StructOf returns type of struct
 func StructOf(v interface{}) reflect.Type {
 	t := reflect.TypeOf(v)
 	switch t.Kind() {
@@ -40,5 +44,28 @@ func StructOf(v interface{}) reflect.Type {
 		return t
 	default:
 		panic(errors.New(ERR_STRUCT_INVALID_TYPE, "Calls StructOf with invalid type. Support: Ptr, Struct"))
+	}
+}
+
+type iteratorFunc func(item interface{})
+
+func Parallel(list map[int][]interface{}, f iteratorFunc) {
+	indexes := make(sort.IntSlice, 0)
+	for i := range list {
+		indexes = append(indexes, i)
+	}
+	sort.Sort(indexes)
+
+	var wg sync.WaitGroup
+	for _, i := range indexes {
+		items := list[i]
+		for _, item := range items {
+			wg.Add(1)
+			go func(f iteratorFunc, item interface{}) {
+				defer wg.Done()
+				f(item)
+			}(f, item)
+		}
+		wg.Wait()
 	}
 }

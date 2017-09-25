@@ -92,9 +92,9 @@ var _ = Describe("FactoryRoute", func() {
 
 	It("Hooks should return route's hooks", func() {
 		r := &FactoryRoute{}
-		r.hooks = make([]Hook, 2)
-		r.hooks[0] = &routeHook{}
-		r.hooks[1] = &routeHook{}
+		r.hooks = make(map[int][]interface{}, 2)
+		r.WithHook(&routeHook{})
+		r.WithHook(&routeHook{})
 		Expect(len(r.Hooks())).To(Equal(2))
 	})
 
@@ -104,7 +104,7 @@ var _ = Describe("FactoryRoute", func() {
 	})
 
 	It("Hook should return route's hook", func() {
-		r := &FactoryRoute{}
+		r := &FactoryRoute{hooks: make(map[int][]interface{})}
 		Expect(len(r.WithHook(&routeHook{}).Hooks())).To(Equal(1))
 	})
 

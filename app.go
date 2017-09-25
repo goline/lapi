@@ -65,7 +65,7 @@ type AppDryRunner interface {
 
 func NewApp() App {
 	return &FactoryApp{
-		loaders:   make([]Loader, 0),
+		loaders:   make(map[int][]interface{}),
 		router:    NewRouter(),
 		container: NewContainer(),
 		rescuer:   NewRescuer(),
@@ -75,13 +75,17 @@ func NewApp() App {
 type FactoryApp struct {
 	config    interface{}
 	container Container
-	loaders   []Loader
+	loaders   map[int][]interface{}
 	router    Router
 	rescuer   Rescuer
 }
 
 func (a *FactoryApp) WithLoader(loader Loader) App {
-	a.loaders = append(a.loaders, loader)
+	p := PRIORITY_DEFAULT
+	if l, ok := loader.(Prioritizer); ok == true {
+		p = l.Priority()
+	}
+	a.loaders[p] = append(a.loaders[p], loader)
 	return a
 }
 
@@ -138,9 +142,9 @@ func (a *FactoryApp) SetUp() *FactoryApp {
 		panic(errors.New(ERR_CONTAINER_NOT_DEFINED, "App requires a container to run"))
 	}
 
-	for _, loader := range a.loaders {
-		loader.Load(a)
-	}
+	Parallel(a.loaders, func(l interface{}) {
+		l.(Loader).Load(a)
+	})
 
 	if a.rescuer == nil {
 		panic(errors.New(ERR_RESCUER_NOT_DEFINED, "App requires a rescuer to be defined"))
