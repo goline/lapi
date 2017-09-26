@@ -1,8 +1,11 @@
-hash: 3aa49ecfd7435dd696fa316916a69988a38621121dcf80567adeee46dc203bc1
-updated: 2017-09-25T12:49:09.129986763+07:00
+hash: 643e90b7a27f438bdd93bf6543aed1dbee7a69089e0894c794f9eccbd8f6723e
+updated: 2017-09-26T12:18:50.264925327+07:00
 imports:
 - name: github.com/goline/errors
   version: b2371c4c8b19799de259df6fde97621d1b42a059
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+testImports:
 - name: github.com/onsi/ginkgo
   version: 9eda700730cba42af70d53180f9dcce9266bc2bc
   subpackages:
@@ -37,11 +40,8 @@ imports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
-- name: github.com/pkg/errors
-  version: 645ef00459ed84a119197bfb8d8205042c6df63d
-testImports:
 - name: golang.org/x/net
-  version: f5079bd7f6f74e23c4d65efa0f4ce14cbd6a3c0f
+  version: 0744d001aa8470aaa53df28d32e5ceeb8af9bd70
   subpackages:
   - html
   - html/atom
