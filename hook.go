@@ -54,6 +54,11 @@ func (h *SystemHook) TearDown(connection Connection, result interface{}, err err
 	return nil
 }
 
+// Priority implements Prioritizer interface
+func (h *SystemHook) Priority() int {
+	return PRIORITY_SYSTEM_HOOK
+}
+
 type ParserHook struct{}
 
 func (h *ParserHook) SetUp(connection Connection) error {
