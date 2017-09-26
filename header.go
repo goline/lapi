@@ -2,6 +2,7 @@ package lapi
 
 import (
 	"strings"
+	"sync"
 )
 
 type Header interface {
@@ -23,33 +24,45 @@ type Header interface {
 
 // NewHeader returns an instance of Header
 func NewHeader() Header {
-	return &FactoryHeader{make(map[string]string)}
+	return &FactoryHeader{new(sync.Map)}
 }
 
 type FactoryHeader struct {
-	items map[string]string
+	items *sync.Map
 }
 
 func (h *FactoryHeader) Get(key string) (string, bool) {
-	value, ok := h.items[h.formatKey(key)]
+	v, ok := h.items.Load(h.formatKey(key))
+	if ok == false {
+		return "", false
+	}
+
+	value := v.(string)
 	return value, ok
 }
 
 func (h *FactoryHeader) Set(key string, value string) {
-	h.items[h.formatKey(key)] = value
+	h.items.Store(h.formatKey(key), value)
 }
 
 func (h *FactoryHeader) Remove(key string) {
-	delete(h.items, h.formatKey(key))
+	h.items.Delete(h.formatKey(key))
 }
 
 func (h *FactoryHeader) Has(key string) bool {
-	_, ok := h.items[h.formatKey(key)]
+	_, ok := h.items.Load(h.formatKey(key))
 	return ok
 }
 
 func (h *FactoryHeader) All() map[string]string {
-	return h.items
+	items := make(map[string]string)
+	h.items.Range(func(key, value interface{}) bool {
+		k := key.(string)
+		v := value.(string)
+		items[k] = v
+		return true
+	})
+	return items
 }
 
 func (h *FactoryHeader) formatKey(key string) string {

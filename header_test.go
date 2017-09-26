@@ -3,6 +3,7 @@ package lapi
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"sync"
 )
 
 var _ = Describe("Header", func() {
@@ -13,38 +14,41 @@ var _ = Describe("Header", func() {
 
 var _ = Describe("FactoryHeader", func() {
 	It("Get should return a value", func() {
-		h := &FactoryHeader{make(map[string]string)}
-		h.items["Content-Type"] = "application/json"
+		h := &FactoryHeader{new(sync.Map)}
+		h.items.Store("Content-Type", "application/json")
 		values, ok := h.Get("content-Type")
 		Expect(ok).To(BeTrue())
 		Expect(values).To(Equal("application/json"))
 	})
 
 	It("Has should return a boolean", func() {
-		h := &FactoryHeader{make(map[string]string)}
-		h.items["Content-Type"] = "application/json"
+		h := &FactoryHeader{new(sync.Map)}
+		h.items.Store("Content-Type", "application/json")
 		Expect(h.Has("content-Type")).To(BeTrue())
 		Expect(h.Has("content-type")).To(BeTrue())
 		Expect(h.Has("ContentType")).To(BeFalse())
 	})
 
 	It("Set should set key-value", func() {
-		h := &FactoryHeader{make(map[string]string)}
+		h := &FactoryHeader{new(sync.Map)}
 		h.Set("content-type", "application/json")
-		Expect(h.items["Content-Type"]).To(Equal("application/json"))
+		v, ok := h.items.Load("Content-Type")
+		Expect(ok).To(BeTrue())
+		Expect(v).To(Equal("application/json"))
 	})
 
 	It("Remove should delete a key", func() {
-		h := &FactoryHeader{make(map[string]string)}
-		h.items["Content-Type"] = "application/json"
+		h := &FactoryHeader{new(sync.Map)}
+		h.items.Store("Content-Type", "application/json")
 		h.Remove("content-TYPE")
-		Expect(len(h.items)).To(Equal(0))
+		_, ok := h.items.Load("Content-Type")
+		Expect(ok).To(BeFalse())
 	})
 
 	It("All should return all items", func() {
-		h := &FactoryHeader{make(map[string]string)}
-		h.items["Content-Type"] = "application/json"
-		h.items["Content-Length"] = "1234"
-		Expect(len(h.items)).To(Equal(2))
+		h := &FactoryHeader{new(sync.Map)}
+		h.items.Store("Content-Type", "application/json")
+		h.items.Store("Content-Length", "1234")
+		Expect(len(h.All())).To(Equal(2))
 	})
 })
