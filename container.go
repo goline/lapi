@@ -3,6 +3,7 @@ package lapi
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/goline/errors"
 )
@@ -42,11 +43,11 @@ type ContainerAware interface {
 }
 
 func NewContainer() Container {
-	return &FactoryContainer{make(map[string]reflect.Value)}
+	return &FactoryContainer{items: new(sync.Map)}
 }
 
 type FactoryContainer struct {
-	items map[string]reflect.Value
+	items *sync.Map
 }
 
 func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) error {
@@ -129,7 +130,7 @@ func (c *FactoryContainer) bindInterface(at reflect.Type, concrete interface{}) 
 		return errors.New(ERR_BIND_INVALID_CONCRETE, fmt.Sprintf("Non-supported kind of concrete. Got %v", ct.Kind()))
 	}
 
-	c.items[at.String()] = reflect.ValueOf(concrete)
+	c.items.Store(at.String(), reflect.ValueOf(concrete))
 	return nil
 }
 
@@ -143,15 +144,16 @@ func (c *FactoryContainer) bindStruct(at reflect.Type, concrete interface{}) err
 		return errors.New(ERR_BIND_INVALID_STRUCT_CONCRETE, fmt.Sprintf("Expects %s. Got %s", at.String(), ct.String()))
 	}
 
-	c.items[at.String()] = reflect.ValueOf(concrete)
+	c.items.Store(at.String(), reflect.ValueOf(concrete))
 	return nil
 }
 
 func (c *FactoryContainer) resolveInterface(at reflect.Type, args ...interface{}) (concrete interface{}, err error) {
-	value, ok := c.items[at.String()]
+	v, ok := c.items.Load(at.String())
 	if ok == false {
 		return nil, errors.New(ERR_RESOLVE_NOT_EXIST_ABSTRACT, fmt.Sprintf("%v is not bound yet", at))
 	}
+	value := v.(reflect.Value)
 
 	switch value.Kind() {
 	case reflect.Func:
@@ -164,10 +166,11 @@ func (c *FactoryContainer) resolveInterface(at reflect.Type, args ...interface{}
 }
 
 func (c *FactoryContainer) resolveStruct(at reflect.Type, args ...interface{}) (concrete interface{}, err error) {
-	value, ok := c.items[at.String()]
+	v, ok := c.items.Load(at.String())
 	if ok == false {
 		return nil, errors.New(ERR_RESOLVE_NOT_EXIST_ABSTRACT, fmt.Sprintf("%v is not bound yet", at))
 	}
+	value := v.(reflect.Value)
 
 	switch value.Kind() {
 	case reflect.Struct, reflect.Ptr:

@@ -6,6 +6,7 @@ import (
 	"github.com/goline/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"sync"
 )
 
 var _ = Describe("Container", func() {
@@ -219,13 +220,13 @@ var _ = Describe("FactoryContainer", func() {
 	})
 
 	It("instanceOf should return false", func() {
-		c := &FactoryContainer{make(map[string]reflect.Value)}
+		c := &FactoryContainer{new(sync.Map)}
 		b := c.instanceOf(reflect.TypeOf("a_string"), reflect.TypeOf((*Bag)(nil)))
 		Expect(b).To(BeFalse())
 	})
 
 	It("instanceOf should return false (ConcreteTypeNotSupport)", func() {
-		c := &FactoryContainer{make(map[string]reflect.Value)}
+		c := &FactoryContainer{new(sync.Map)}
 		i, _ := c.interfaceOf((*Bag)(nil))
 		b := c.instanceOf(i, reflect.TypeOf("a_string"))
 		Expect(b).To(BeFalse())
