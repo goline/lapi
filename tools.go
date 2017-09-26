@@ -3,7 +3,6 @@ package lapi
 import (
 	"reflect"
 	"sort"
-	"sync"
 
 	"github.com/goline/errors"
 )
@@ -47,25 +46,14 @@ func StructOf(v interface{}) reflect.Type {
 	}
 }
 
-type iteratorFunc func(item interface{})
-
-func Parallel(list map[int][]interface{}, f iteratorFunc) {
+func Parallel(list map[int]*Slice, f SliceFunc) {
 	indexes := make(sort.IntSlice, 0)
 	for i := range list {
 		indexes = append(indexes, i)
 	}
 	sort.Sort(indexes)
 
-	var wg sync.WaitGroup
 	for _, i := range indexes {
-		items := list[i]
-		for _, item := range items {
-			wg.Add(1)
-			go func(f iteratorFunc, item interface{}) {
-				defer wg.Done()
-				f(item)
-			}(f, item)
-		}
-		wg.Wait()
+		list[i].Run(f)
 	}
 }

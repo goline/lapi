@@ -66,7 +66,7 @@ type RouteMatcher interface {
 // RouteHooker manages route's hooks
 type RouteHooker interface {
 	// Hooks returns all hooks for route
-	Hooks() []Hook
+	Hooks() map[int]*Slice
 
 	// WithHooks allows to add hooks
 	WithHooks(hooks ...Hook) Route
@@ -105,7 +105,7 @@ func NewRoute(method string, uri string, handler Handler) Route {
 	r := &FactoryRoute{
 		pvHost: &patternVerifier{},
 		pvUri:  &patternVerifier{},
-		hooks:  make(map[int][]interface{}),
+		hooks:  make(map[int]*Slice),
 		tags:   make([]string, 0),
 	}
 	return r.
@@ -121,7 +121,7 @@ type FactoryRoute struct {
 	method         string
 	uri            string
 	handler        Handler
-	hooks          map[int][]interface{}
+	hooks          map[int]*Slice
 	pvHost         *patternVerifier
 	pvUri          *patternVerifier
 	requestInput   reflect.Type
@@ -188,20 +188,12 @@ func (r *FactoryRoute) WithHandler(handler Handler) Route {
 	return r
 }
 
-func (r *FactoryRoute) Hooks() []Hook {
-	hooks := make([]Hook, 0)
-	for _, items := range r.hooks {
-		for _, item := range items {
-			if h, ok := item.(Hook); ok == true {
-				hooks = append(hooks, h)
-			}
-		}
-	}
-	return hooks
+func (r *FactoryRoute) Hooks() map[int]*Slice {
+	return r.hooks
 }
 
 func (r *FactoryRoute) WithHooks(hooks ...Hook) Route {
-	r.hooks = make(map[int][]interface{})
+	r.hooks = make(map[int]*Slice)
 	for _, hook := range hooks {
 		r.WithHook(hook)
 	}
@@ -213,7 +205,12 @@ func (r *FactoryRoute) WithHook(hook Hook) Route {
 	if h, ok := hook.(Prioritizer); ok == true {
 		p = h.Priority()
 	}
-	r.hooks[p] = append(r.hooks[p], hook)
+
+	if r.hooks[p] == nil {
+		r.hooks[p] = new(Slice)
+	}
+
+	r.hooks[p].Append(hook)
 	return r
 }
 

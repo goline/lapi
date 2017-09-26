@@ -27,15 +27,17 @@ var _ = Describe("Utils", func() {
 	})
 
 	It("Parallel should run functions by order", func() {
-		m := make(map[int][]interface{})
-		m[2] = []interface{}{"a", "b"}
-		m[0] = []interface{}{"d", "e"}
-		m[5] = []interface{}{"g"}
-		s := make([]string, 0)
+		m := make(map[int]*Slice)
+		m[2] = new(Slice)
+		m[0] = new(Slice)
+		m[5] = new(Slice)
+		m[2].Append("b").Append("a")
+		m[0].Append("d").Append("e")
+		m[5].Append("h").Append("c").Append("k")
+		s := new(Slice)
 		Parallel(m, func(item interface{}) {
-			i := item.(string)
-			s = append(s, i)
+			s.Append(item.(string))
 		})
-		Expect(len(s)).To(Equal(5))
+		Expect(len(s.All())).To(Equal(7))
 	})
 })

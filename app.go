@@ -65,7 +65,7 @@ type AppDryRunner interface {
 
 func NewApp() App {
 	return &FactoryApp{
-		loaders:   make(map[int][]interface{}),
+		loaders:   make(map[int]*Slice),
 		router:    NewRouter(),
 		container: NewContainer(),
 		rescuer:   NewRescuer(),
@@ -75,7 +75,7 @@ func NewApp() App {
 type FactoryApp struct {
 	config    interface{}
 	container Container
-	loaders   map[int][]interface{}
+	loaders   map[int]*Slice
 	router    Router
 	rescuer   Rescuer
 }
@@ -85,7 +85,12 @@ func (a *FactoryApp) WithLoader(loader Loader) App {
 	if l, ok := loader.(Prioritizer); ok == true {
 		p = l.Priority()
 	}
-	a.loaders[p] = append(a.loaders[p], loader)
+
+	if a.loaders[p] == nil {
+		a.loaders[p] = new(Slice)
+	}
+
+	a.loaders[p].Append(loader)
 	return a
 }
 
@@ -172,9 +177,11 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer a.forceSendResponse(connection)
 
 	PanicOnError(a.router.Route(connection.Request()))
-	for _, hook := range connection.Request().Route().Hooks() {
-		PanicOnError(hook.SetUp(connection))
-	}
+	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
+		if hook, ok := item.(Hook); ok == true {
+			PanicOnError(hook.SetUp(connection))
+		}
+	})
 	if connection.Response().IsSent() == true {
 		return
 	}
@@ -189,9 +196,11 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.WithContainer(a.container)
 	}
 	result, err := handler.Handle(connection)
-	for _, hook := range connection.Request().Route().Hooks() {
-		PanicOnError(hook.TearDown(connection, result, err))
-	}
+	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
+		if hook, ok := item.(Hook); ok == true {
+			PanicOnError(hook.TearDown(connection, result, err))
+		}
+	})
 }
 
 func (a *FactoryApp) forceSendResponse(connection Connection) {
