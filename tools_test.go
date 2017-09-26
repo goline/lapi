@@ -3,7 +3,6 @@ package lapi
 import (
 	"errors"
 
-	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -39,6 +38,5 @@ var _ = Describe("Utils", func() {
 		})
 		Expect(len(s)).To(Equal(5))
 		Expect(s).To(Equal([]string{"e", "d", "b", "a", "g"}))
-		fmt.Println(m)
 	})
 })
