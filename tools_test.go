@@ -37,6 +37,5 @@ var _ = Describe("Utils", func() {
 			s = append(s, i)
 		})
 		Expect(len(s)).To(Equal(5))
-		Expect(s).To(Equal([]string{"e", "d", "b", "a", "g"}))
 	})
 })
