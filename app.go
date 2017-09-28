@@ -1,7 +1,6 @@
 package lapi
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/goline/errors"
@@ -55,12 +54,6 @@ type AppRunner interface {
 	// Run brings application up
 	// Any errors should manage inside this method
 	Run()
-}
-
-type AppDryRunner interface {
-	// DryRun brings application up
-	// It should configure and load only
-	DryRun()
 }
 
 func NewApp() App {
@@ -135,14 +128,6 @@ func (a *FactoryApp) WithContainer(container Container) ContainerAware {
 }
 
 func (a *FactoryApp) Run() {
-	a.SetUp().Handle()
-}
-
-func (a *FactoryApp) DryRun() {
-	a.SetUp()
-}
-
-func (a *FactoryApp) SetUp() *FactoryApp {
 	if a.container == nil {
 		panic(errors.New(ERR_CONTAINER_NOT_DEFINED, "App requires a container to run"))
 	}
@@ -155,21 +140,6 @@ func (a *FactoryApp) SetUp() *FactoryApp {
 		panic(errors.New(ERR_RESCUER_NOT_DEFINED, "App requires a rescuer to be defined"))
 	}
 	PanicOnError(a.container.Inject(a.rescuer))
-	return a
-}
-
-func (a *FactoryApp) Handle() *FactoryApp {
-	if a.router == nil {
-		panic(errors.New(ERR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
-	}
-
-	http.Handle("/", a)
-	if c, ok := a.config.(ServerConfig); ok == true {
-		PanicOnError(http.ListenAndServe(c.Address(), nil))
-	} else {
-		panic(errors.New(ERR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing")))
-	}
-	return a
 }
 
 func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -179,7 +149,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	PanicOnError(a.router.Route(connection.Request()))
 	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
 		if hook, ok := item.(Hook); ok == true {
-			defer a.forceRecover(connection)
+			defer a.forceSendResponse(connection)
 			PanicOnError(hook.SetUp(connection))
 		}
 	})
@@ -199,22 +169,18 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	result, err := handler.Handle(connection)
 	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
 		if hook, ok := item.(Hook); ok == true {
-			defer a.forceRecover(connection)
+			defer a.forceSendResponse(connection)
 			PanicOnError(hook.TearDown(connection, result, err))
 		}
 	})
 }
 
 func (a *FactoryApp) forceSendResponse(connection Connection) {
-	a.forceRecover(connection)
-	if connection.Response().IsSent() == false {
-		connection.Response().Send()
-	}
-}
-
-func (a *FactoryApp) forceRecover(connection Connection) {
 	if r := recover(); r != nil {
 		PanicOnError(a.rescuer.Rescue(connection, r))
+	}
+	if connection.Response().IsSent() == false {
+		connection.Response().Send()
 	}
 }
 
