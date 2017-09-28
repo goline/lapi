@@ -149,11 +149,12 @@ func (a *FactoryApp) Run() {
 func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	connection := a.setUpConnection(w, r)
 	defer a.forceSendResponse(connection)
+	defer a.forceRecover(connection)
 
 	PanicOnError(a.router.Route(connection.Request()))
 	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
 		if hook, ok := item.(Hook); ok == true {
-			defer a.forceSendResponse(connection)
+			defer a.forceRecover(connection)
 			PanicOnError(hook.SetUp(connection))
 		}
 	})
@@ -173,18 +174,21 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	result, err := handler.Handle(connection)
 	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
 		if hook, ok := item.(Hook); ok == true {
-			defer a.forceSendResponse(connection)
+			defer a.forceRecover(connection)
 			PanicOnError(hook.TearDown(connection, result, err))
 		}
 	})
 }
 
 func (a *FactoryApp) forceSendResponse(connection Connection) {
-	if r := recover(); r != nil {
-		PanicOnError(a.rescuer.Rescue(connection, r))
-	}
 	if connection.Response().IsSent() == false {
 		connection.Response().Send()
+	}
+}
+
+func (a *FactoryApp) forceRecover(connection Connection) {
+	if r := recover(); r != nil {
+		PanicOnError(a.rescuer.Rescue(connection, r))
 	}
 }
 
