@@ -3,6 +3,7 @@ package lapi
 import (
 	"net/http"
 
+	"fmt"
 	"github.com/goline/errors"
 )
 
@@ -132,14 +133,17 @@ func (a *FactoryApp) Run() {
 		panic(errors.New(ERR_CONTAINER_NOT_DEFINED, "App requires a container to run"))
 	}
 
-	Parallel(a.loaders, func(l interface{}) {
-		l.(Loader).Load(a)
-	})
-
 	if a.rescuer == nil {
 		panic(errors.New(ERR_RESCUER_NOT_DEFINED, "App requires a rescuer to be defined"))
 	}
-	PanicOnError(a.container.Inject(a.rescuer))
+
+	if a.router == nil {
+		panic(errors.New(ERR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
+	}
+
+	Parallel(a.loaders, func(l interface{}) {
+		l.(Loader).Load(a)
+	})
 }
 
 func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {

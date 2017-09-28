@@ -182,6 +182,20 @@ var _ = Describe("FactoryResponse", func() {
 		Expect(err).To(BeNil())
 	})
 
+	It("Send should return error code ERR_RESPONSE_IS_SENDING", func() {
+		r := &FactoryResponse{writer: httptest.NewRecorder(), header: NewHeader(), Body: NewBody()}
+		r.WithContentType(CONTENT_TYPE_JSON)
+		r.WithCharset(CONTENT_CHARSET_DEFAULT)
+		r.lock()
+		err := r.Send()
+		Expect(err).NotTo(BeNil())
+		Expect(err.(errors.Error).Code()).To(Equal(ERR_RESPONSE_IS_SENDING))
+
+		r.unlock()
+		err = r.Send()
+		Expect(err).To(BeNil())
+	})
+
 	It("IsSent should return boolean", func() {
 		r := &FactoryResponse{}
 		Expect(r.IsSent()).To(BeFalse())

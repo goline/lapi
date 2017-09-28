@@ -18,9 +18,7 @@ type ServerLoader struct {
 }
 
 func (l *ServerLoader) Load(app App) {
-	if app.Router() == nil {
-		panic(errors.New(ERR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
-	}
+	PanicOnError(app.Container().Inject(app.Rescuer()))
 
 	http.Handle("/", app)
 	if c, ok := app.Config().(ServerConfig); ok == true {

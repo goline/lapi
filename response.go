@@ -72,12 +72,13 @@ func NewResponse(w http.ResponseWriter) Response {
 }
 
 type FactoryResponse struct {
-	writer  http.ResponseWriter
-	status  int
-	message string
-	header  Header
-	cookies []*http.Cookie
-	isSent  bool
+	writer    http.ResponseWriter
+	status    int
+	message   string
+	header    Header
+	cookies   []*http.Cookie
+	isSent    bool
+	isSending bool
 	Body
 }
 
@@ -118,6 +119,11 @@ func (r *FactoryResponse) WithCookies(cookies []*http.Cookie) Response {
 }
 
 func (r *FactoryResponse) Send() error {
+	if r.lock() == true {
+		return errors.New(ERR_RESPONSE_IS_SENDING, "Sending response is in progress")
+	}
+	defer r.unlock()
+
 	if r.writer == nil {
 		return errors.New(ERR_NO_WRITER_FOUND, "No writer found")
 	}
@@ -163,4 +169,16 @@ func (r *FactoryResponse) Send() error {
 
 func (r *FactoryResponse) IsSent() bool {
 	return r.isSent
+}
+
+func (r *FactoryResponse) lock() bool {
+	if r.isSending == true {
+		return true
+	}
+	r.isSending = true
+	return false
+}
+
+func (r *FactoryResponse) unlock() {
+	r.isSending = false
 }
