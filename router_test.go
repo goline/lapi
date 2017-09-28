@@ -64,6 +64,14 @@ var _ = Describe("FactoryRouter", func() {
 		Expect(route.Uri()).To(Equal("/auth/user"))
 	})
 
+	It("Any should register empty method route", func() {
+		r := NewRouter()
+		r.Any("/test", nil).WithName("m")
+		route, ok := r.ByName("m")
+		Expect(ok).To(BeTrue())
+		Expect(route.Method()).To(Equal(""))
+	})
+
 	It("Get should register GET route", func() {
 		r := NewRouter()
 		r.Get("/test", nil).WithName("m")

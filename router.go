@@ -46,6 +46,9 @@ type RouteInformer interface {
 
 // RouteRegister lets manually register a route
 type RouteRegister interface {
+	// Any registers route for any methods
+	Any(uri string, handler Handler) Route
+
 	// Register enrolls a http route handler
 	Register(method string, uri string, handler Handler) Route
 
@@ -110,6 +113,10 @@ type FactoryRouter struct {
 	routes []Route
 	parent Router
 	prefix string
+}
+
+func (r *FactoryRouter) Any(uri string, handler Handler) Route {
+	return r.Register("", uri, handler)
 }
 
 func (r *FactoryRouter) Get(uri string, handler Handler) Route {
