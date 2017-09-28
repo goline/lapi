@@ -13,9 +13,11 @@ type Loader interface {
 	Load(app App)
 }
 
-type HttpServerLoader struct{}
+type ServerLoader struct {
+	PriorityAware
+}
 
-func (l *HttpServerLoader) Load(app App) {
+func (l *ServerLoader) Load(app App) {
 	if app.Router() == nil {
 		panic(errors.New(ERR_ROUTER_NOT_DEFINED, fmt.Sprint("Router is not defined yet.")))
 	}
