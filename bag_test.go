@@ -48,4 +48,28 @@ var _ = Describe("FactoryBag", func() {
 		b.items["my_another_key"] = 1
 		Expect(len(b.All())).To(Equal(2))
 	})
+
+	It("GetInt64 should return int64 value", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		b.items["my_int64"] = 10
+		i, ok := b.GetInt64("my_int64")
+		Expect(ok).To(BeTrue())
+		Expect(i).To(Equal(int64(10)))
+	})
+
+	It("GetFloat64 should return float64 value", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		b.items["my_float64"] = 10.01
+		f, ok := b.GetFloat64("my_float64")
+		Expect(ok).To(BeTrue())
+		Expect(f).To(Equal(float64(10.01)))
+	})
+
+	It("GetString should return string value", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		b.items["my_string"] = "10.01"
+		s, ok := b.GetString("my_string")
+		Expect(ok).To(BeTrue())
+		Expect(s).To(Equal("10.01"))
+	})
 })

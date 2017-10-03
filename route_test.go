@@ -49,7 +49,7 @@ var _ = Describe("FactoryRoute", func() {
 
 	It("WithHost should set route's host", func() {
 		r := &FactoryRoute{pvHost: &patternVerifier{}}
-		p := "({locale:[a-z]{2}}).abc.com:8888"
+		p := "<locale:[a-z]{2}>.abc.com:8888"
 		r.WithHost(p)
 		Expect(r.host).To(Equal(p))
 	})
@@ -118,7 +118,7 @@ var _ = Describe("FactoryRoute", func() {
 		req.WithHost("domain.com").
 			WithUri("/test/abc")
 		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-		r.WithUri("/test/({id:\\d+})")
+		r.WithUri("/test/<id:\\d+>")
 
 		_, ok := r.Match(req)
 		Expect(ok).To(BeFalse())
@@ -129,7 +129,8 @@ var _ = Describe("FactoryRoute", func() {
 		req.WithHost("en.domain.com").
 			WithUri("/test/55")
 		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-		r.WithUri("/test/({id:\\d+})").WithHost("({locale:[a-z]{2}}).domain.com")
+		r.WithUri("/test/<id:\\d+>").
+			WithHost("<locale:[a-z]{2}>.domain.com")
 
 		_, ok := r.Match(req)
 		Expect(ok).To(BeTrue())
@@ -166,17 +167,6 @@ var _ = Describe("FactoryRoute", func() {
 		req.WithUri("/v1/user")
 		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
 		r.WithUri("/.*")
-
-		_, ok := r.Match(req)
-		Expect(ok).To(BeTrue())
-		Expect(len(req.params.All())).To(BeZero())
-	})
-
-	It("Match should request not enough parameters", func() {
-		req := &FactoryRequest{params: NewBag()}
-		req.WithUri("/v1/user")
-		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}}
-		r.WithUri("/{uri:.*}")
 
 		_, ok := r.Match(req)
 		Expect(ok).To(BeTrue())

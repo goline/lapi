@@ -264,7 +264,7 @@ func (r *FactoryRoute) genRouteName() string {
 }
 
 func (r *FactoryRoute) extractKeyPattern(pattern string) (string, []string) {
-	p := `(\{(\w+):([^\}]+)\})`
+	p := `(\<(\w+):([^\>]+)\>)`
 	re, err := regexp.Compile(p)
 	PanicOnError(err)
 	if !re.MatchString(pattern) {
@@ -274,7 +274,7 @@ func (r *FactoryRoute) extractKeyPattern(pattern string) (string, []string) {
 	keys := make([]string, len(v))
 	for i, m := range v {
 		keys[i] = m[2]
-		pattern = strings.Replace(pattern, m[1], m[3], 1)
+		pattern = strings.Replace(pattern, m[1], fmt.Sprintf("(%s)", m[3]), 1)
 	}
 	return pattern, keys
 }
