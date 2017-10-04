@@ -1,9 +1,9 @@
 package lapi
 
 import (
+	"fmt"
 	"net/http"
 
-	"fmt"
 	"github.com/goline/errors"
 )
 
@@ -196,8 +196,11 @@ func (a *FactoryApp) setUpConnection(w http.ResponseWriter, r *http.Request) Con
 	request := NewRequest(r)
 	response := NewResponse(w)
 
-	// let make request and response have same content-type and charset as default
-	response.WithContentType(request.ContentType()).WithCharset(request.Charset())
+	// makes request and response have same
+	// content-type and charset by default
+	response.Body().
+		WithContentType(request.Body().ContentType()).
+		WithCharset(request.Body().Charset())
 
 	return NewConnection(request, response)
 }

@@ -9,7 +9,6 @@ import (
 
 // Route acts a route describer
 type Route interface {
-	RouteBodyIO
 	RouteTagger
 	RouteHooker
 	RouteHandler
@@ -73,20 +72,6 @@ type RouteHooker interface {
 
 	// WithHook add a single hook
 	WithHook(hook Hook) Route
-}
-
-type RouteBodyIO interface {
-	// RequestInput returns an object represents body's input
-	RequestInput() interface{}
-
-	// WithRequestInput sets body's input object
-	WithRequestInput(input interface{}) Route
-
-	// ResponseOutput returns body's output object
-	ResponseOutput() interface{}
-
-	// WithResponseOutput sets body's output
-	WithResponseOutput(output interface{}) Route
 }
 
 // RouteTagger lets route become taggable

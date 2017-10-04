@@ -40,7 +40,7 @@ func (r *FactoryRescuer) Rescue(c Connection, v interface{}) error {
 	if r.parser == nil {
 		r.parser = new(JsonParser)
 	}
-	c.Response().
+	c.Response().Body().
 		WithContentType(CONTENT_TYPE_JSON).
 		WithParser(r.parser)
 
@@ -70,7 +70,7 @@ func (r *FactoryRescuer) Rescue(c Connection, v interface{}) error {
 		message = fmt.Sprintf("%s", v)
 		c.Response().WithStatus(http.StatusInternalServerError)
 	}
-	c.Response().WithContent(&ErrorResponse{code, message})
+	c.Response().Body().Write(&ErrorResponse{code, message})
 
 	return nil
 }

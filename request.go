@@ -19,8 +19,6 @@ type Request interface {
 	RequestIdentifier
 }
 
-type RequestBody Body
-
 // RequestAncestor keeps original http.Request
 type RequestAncestor interface {
 	Ancestor() *http.Request
@@ -32,6 +30,14 @@ type RequestIdentifier interface {
 
 	// WithId sets request id
 	WithId(id string) Request
+}
+
+type RequestBody interface {
+	// Body returns an instance of Body
+	Body() Body
+
+	// WithBody sets body's instance
+	WithBody(body Body) Request
 }
 
 // RequestResolver returns routing information
@@ -115,10 +121,12 @@ func NewRequest(req *http.Request) Request {
 		cookies:  make(map[string]*http.Cookie),
 		params:   NewBag(),
 		header:   NewHeader(),
-		Body:     NewBody(),
 	}
 	if req != nil {
+		r.body = NewBody(req.Body, nil)
 		r.parseRequest()
+	} else {
+		r.body = NewBody(nil, nil)
 	}
 	return r
 }
@@ -136,7 +144,7 @@ type FactoryRequest struct {
 	host     string
 	port     int
 	uri      string
-	Body
+	body     Body
 }
 
 func (r *FactoryRequest) Ancestor() *http.Request {
@@ -149,6 +157,15 @@ func (r *FactoryRequest) Id() string {
 
 func (r *FactoryRequest) WithId(id string) Request {
 	r.id = id
+	return r
+}
+
+func (r *FactoryRequest) Body() Body {
+	return r.body
+}
+
+func (r *FactoryRequest) WithBody(body Body) Request {
+	r.body = body
 	return r
 }
 
@@ -287,7 +304,7 @@ func (r *FactoryRequest) parseCookies() {
 func (r *FactoryRequest) parseContentType() {
 	contentType, ok := r.header.Get(HEADER_CONTENT_TYPE)
 	if ok == false {
-		r.WithContentType(CONTENT_TYPE_DEFAULT).WithCharset(CONTENT_CHARSET_DEFAULT)
+		r.body.WithContentType(CONTENT_TYPE_DEFAULT).WithCharset(CONTENT_CHARSET_DEFAULT)
 	} else {
 		reg, err := regexp.Compile(`^([\w-/]+)(;?[ ]+charset=([\w-]+))?$`)
 		PanicOnError(err)
@@ -297,9 +314,9 @@ func (r *FactoryRequest) parseContentType() {
 			if matches[3] == "" {
 				matches[3] = CONTENT_CHARSET_DEFAULT
 			}
-			r.WithContentType(matches[1]).WithCharset(matches[3])
+			r.body.WithContentType(matches[1]).WithCharset(matches[3])
 		default:
-			r.WithContentType(CONTENT_TYPE_DEFAULT).WithCharset(CONTENT_CHARSET_DEFAULT)
+			r.body.WithContentType(CONTENT_TYPE_DEFAULT).WithCharset(CONTENT_CHARSET_DEFAULT)
 		}
 	}
 }

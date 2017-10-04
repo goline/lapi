@@ -2,8 +2,9 @@ package lapi
 
 import (
 	"fmt"
-	"github.com/goline/errors"
 	"net/http"
+
+	"github.com/goline/errors"
 )
 
 // Response is a application's response
@@ -13,9 +14,21 @@ type Response interface {
 	ResponseSender
 	ResponseCookies
 	ResponseInformer
+	ResponseAncestor
 }
 
-type ResponseBody Body
+type ResponseBody interface {
+	// Body returns an instance of Body
+	Body() Body
+
+	// WithBody sets body's instance
+	WithBody(body Body) Response
+}
+
+// ResponseAncestor keeps original http.Request
+type ResponseAncestor interface {
+	Ancestor() http.ResponseWriter
+}
 
 type ResponseInformer interface {
 	// Status gets HTTP status code
@@ -63,23 +76,36 @@ type ResponseSender interface {
 
 func NewResponse(w http.ResponseWriter) Response {
 	return &FactoryResponse{
-		writer: w,
-		status: http.StatusOK,
-		header: NewHeader(),
-		isSent: false,
-		Body:   NewBody(),
+		ancestor: w,
+		status:   http.StatusOK,
+		header:   NewHeader(),
+		isSent:   false,
+		body:     NewBody(nil, w),
 	}
 }
 
 type FactoryResponse struct {
-	writer    http.ResponseWriter
+	ancestor  http.ResponseWriter
 	status    int
 	message   string
 	header    Header
 	cookies   []*http.Cookie
+	body      Body
 	isSent    bool
 	isSending bool
-	Body
+}
+
+func (r *FactoryResponse) Ancestor() http.ResponseWriter {
+	return r.ancestor
+}
+
+func (r *FactoryResponse) Body() Body {
+	return r.body
+}
+
+func (r *FactoryResponse) WithBody(body Body) Response {
+	r.body = body
+	return r
 }
 
 func (r *FactoryResponse) Status() int {
@@ -124,7 +150,7 @@ func (r *FactoryResponse) Send() error {
 	}
 	defer r.unlock()
 
-	if r.writer == nil {
+	if r.ancestor == nil {
 		return errors.New(ERR_NO_WRITER_FOUND, "No writer found")
 	}
 
@@ -132,11 +158,11 @@ func (r *FactoryResponse) Send() error {
 		return errors.New(ERR_RESPONSE_ALREADY_SENT, "Response is already sent")
 	}
 
-	contentType := r.ContentType()
+	contentType := r.body.ContentType()
 	if contentType == "" {
 		return errors.New(ERR_CONTENT_TYPE_EMPTY, "Content-Type is required")
 	}
-	charset := r.Charset()
+	charset := r.body.Charset()
 	if charset != "" {
 		r.header.Set("content-type", fmt.Sprintf("%s; charset=%s", contentType, charset))
 	} else {
@@ -144,24 +170,19 @@ func (r *FactoryResponse) Send() error {
 	}
 
 	for _, cookie := range r.cookies {
-		http.SetCookie(r.writer, cookie)
+		http.SetCookie(r.ancestor, cookie)
 	}
 
 	for k, v := range r.header.All() {
-		r.writer.Header().Set(k, v)
-	}
-
-	content, err := r.ContentBytes()
-	if err != nil {
-		return err
+		r.ancestor.Header().Set(k, v)
 	}
 
 	if r.message != "" {
-		http.Error(r.writer, r.message, r.status)
+		http.Error(r.ancestor, r.message, r.status)
 	} else {
-		r.writer.WriteHeader(r.status)
+		r.ancestor.WriteHeader(r.status)
 	}
-	r.writer.Write(content)
+	r.body.Flush()
 
 	r.isSent = true
 	return nil

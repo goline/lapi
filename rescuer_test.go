@@ -52,5 +52,5 @@ var _ = Describe("FactoryRescuer", func() {
 })
 
 func getEmptyResponse() Response {
-	return &FactoryResponse{Body: NewBody()}
+	return &FactoryResponse{body: NewBody(nil, nil)}
 }

@@ -1,10 +1,5 @@
 package lapi
 
-import (
-	"io/ioutil"
-	"net/http"
-)
-
 // Hook acts as a middleware of processing request
 type Hook interface {
 	// SetUp executes Hook before handler runs
@@ -19,28 +14,11 @@ type Hook interface {
 // SystemHook acts as mandatory hook
 type SystemHook struct{}
 
-func (h *SystemHook) SetUp(connection Connection) error {
-	request := connection.Request()
-	if (request.Method() != http.MethodPost &&
-		request.Method() != http.MethodPut &&
-		request.Method() != http.MethodPatch) ||
-		request.Route().RequestInput() == nil {
-		return nil
-	}
-
-	body := request.Ancestor().Body
-	defer body.Close()
-
-	content, err := ioutil.ReadAll(request.Ancestor().Body)
-	if err != nil {
-		return err
-	}
-	request.WithContentBytes(content, request.Route().RequestInput())
-
+func (h *SystemHook) SetUp(_ Connection) error {
 	return nil
 }
 
-func (h *SystemHook) TearDown(connection Connection, result interface{}, err error) error {
+func (h *SystemHook) TearDown(c Connection, result interface{}, err error) error {
 	if err != nil {
 		// let rescuer handle error
 		return err
@@ -50,7 +28,7 @@ func (h *SystemHook) TearDown(connection Connection, result interface{}, err err
 		return nil
 	}
 
-	connection.Response().WithContent(result)
+	c.Response().Body().Write(result)
 	return nil
 }
 
@@ -63,8 +41,8 @@ type ParserHook struct{}
 
 func (h *ParserHook) SetUp(connection Connection) error {
 	parser := new(JsonParser)
-	connection.Request().WithParser(parser)
-	connection.Response().WithParser(parser)
+	connection.Request().Body().WithParser(parser)
+	connection.Response().Body().WithParser(parser)
 	return nil
 }
 

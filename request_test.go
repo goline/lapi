@@ -54,7 +54,7 @@ var _ = Describe("FactoryRequest", func() {
 	It("Header should contain headers", func() {
 		a, _ := http.NewRequest("GET", "/test", nil)
 		a.Header.Set("content-type", "application/json")
-		r := &FactoryRequest{header: NewHeader(), Body: NewBody()}
+		r := &FactoryRequest{header: NewHeader(), body: NewBody(nil, nil)}
 		r.ancestor = a
 		r.parseRequest()
 		v, ok := r.Header().Get("Content-Type")
@@ -175,20 +175,20 @@ var _ = Describe("FactoryRequest", func() {
 	})
 
 	It("parseContentType should parse header content-type", func() {
-		r := &FactoryRequest{header: NewHeader(), Body: NewBody()}
+		r := &FactoryRequest{header: NewHeader(), body: NewBody(nil, nil)}
 		r.header.Set(HEADER_CONTENT_TYPE, CONTENT_TYPE_XML)
 		r.parseContentType()
-		Expect(r.ContentType()).To(Equal(CONTENT_TYPE_XML))
-		Expect(r.Charset()).To(Equal(CONTENT_CHARSET_DEFAULT))
+		Expect(r.Body().ContentType()).To(Equal(CONTENT_TYPE_XML))
+		Expect(r.Body().Charset()).To(Equal(CONTENT_CHARSET_DEFAULT))
 
 		r.header.Set(HEADER_CONTENT_TYPE, "application/json; charset=UTF-8")
 		r.parseContentType()
-		Expect(r.ContentType()).To(Equal("application/json"))
-		Expect(r.Charset()).To(Equal("UTF-8"))
+		Expect(r.Body().ContentType()).To(Equal("application/json"))
+		Expect(r.Body().Charset()).To(Equal("UTF-8"))
 
 		r.header.Set(HEADER_CONTENT_TYPE, "*invalid_content_type")
 		r.parseContentType()
-		Expect(r.ContentType()).To(Equal(CONTENT_TYPE_DEFAULT))
-		Expect(r.Charset()).To(Equal(CONTENT_CHARSET_DEFAULT))
+		Expect(r.Body().ContentType()).To(Equal(CONTENT_TYPE_DEFAULT))
+		Expect(r.Body().Charset()).To(Equal(CONTENT_CHARSET_DEFAULT))
 	})
 })

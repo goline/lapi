@@ -3,7 +3,6 @@ package lapi
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"reflect"
 )
 
 var _ = Describe("Route", func() {
@@ -171,28 +170,6 @@ var _ = Describe("FactoryRoute", func() {
 		_, ok := r.Match(req)
 		Expect(ok).To(BeTrue())
 		Expect(len(req.params.All())).To(BeZero())
-	})
-
-	It("RequestInput should return an object", func() {
-		r := &FactoryRoute{}
-		r.requestInput = reflect.TypeOf(&sampleRequestInput{})
-		Expect(r.RequestInput()).NotTo(BeNil())
-	})
-
-	It("WithRequestInput should set route input", func() {
-		r := &FactoryRoute{}
-		Expect(r.WithRequestInput(&sampleRequestInput{}).RequestInput()).NotTo(BeNil())
-	})
-
-	It("ResponseOutput should return an object", func() {
-		r := &FactoryRoute{}
-		r.responseOutput = reflect.TypeOf(&sampleResponseOutput{})
-		Expect(r.ResponseOutput()).NotTo(BeNil())
-	})
-
-	It("WithResponseOutput should set route input", func() {
-		r := &FactoryRoute{}
-		Expect(r.WithResponseOutput(&sampleResponseOutput{}).ResponseOutput()).NotTo(BeNil())
 	})
 
 	It("Tags should return route's tags", func() {

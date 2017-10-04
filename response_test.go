@@ -93,15 +93,15 @@ var _ = Describe("FactoryResponse", func() {
 
 	It("Send should flush response", func() {
 		h := func(w http.ResponseWriter, r *http.Request) {
-			rs := &FactoryResponse{writer: w, Body: NewBody(), header: NewHeader()}
-			rs.WithContentType(CONTENT_TYPE_JSON)
-			rs.WithParser(new(JsonParser))
+			rs := &FactoryResponse{ancestor: w, body: NewBody(nil, w), header: NewHeader()}
+			rs.Body().WithContentType(CONTENT_TYPE_JSON)
+			rs.Body().WithParser(new(JsonParser))
 			rs.WithStatus(http.StatusInternalServerError)
 			rs.Header().Set("x-custom-flag", "1234")
 			c := make(map[string]interface{})
 			c["status"] = true
 			c["errors"] = false
-			rs.WithContent(c)
+			rs.Body().Write(c)
 			rs.WithCookies([]*http.Cookie{
 				&http.Cookie{Name: "my_c1", Value: "my_val1"},
 				&http.Cookie{Name: "my_c2", Value: "my_val2"},
@@ -139,7 +139,7 @@ var _ = Describe("FactoryResponse", func() {
 	})
 
 	It("Send should return error code ERR_RESPONSE_ALREADY_SENT", func() {
-		r := &FactoryResponse{writer: httptest.NewRecorder()}
+		r := &FactoryResponse{ancestor: httptest.NewRecorder()}
 		r.isSent = true
 		err := r.Send()
 		Expect(err).NotTo(BeNil())
@@ -147,16 +147,18 @@ var _ = Describe("FactoryResponse", func() {
 	})
 
 	It("Send should return error code ERR_CONTENT_TYPE_EMPTY", func() {
-		r := &FactoryResponse{writer: httptest.NewRecorder(), Body: NewBody()}
+		w := httptest.NewRecorder()
+		r := &FactoryResponse{ancestor: w, body: NewBody(nil, w)}
 		err := r.Send()
 		Expect(err).NotTo(BeNil())
 		Expect(err.(errors.Error).Code()).To(Equal(ERR_CONTENT_TYPE_EMPTY))
 	})
 
 	It("Send should delivery header content-type", func() {
-		r := &FactoryResponse{writer: httptest.NewRecorder(), header: NewHeader(), Body: NewBody()}
-		r.WithContentType(CONTENT_TYPE_JSON)
-		r.WithCharset(CONTENT_CHARSET_DEFAULT)
+		w := httptest.NewRecorder()
+		r := &FactoryResponse{ancestor: w, header: NewHeader(), body: NewBody(nil, w)}
+		r.Body().WithContentType(CONTENT_TYPE_JSON)
+		r.Body().WithCharset(CONTENT_CHARSET_DEFAULT)
 		r.Send()
 		v, ok := r.header.Get(HEADER_CONTENT_TYPE)
 		Expect(ok).To(BeTrue())
@@ -164,28 +166,31 @@ var _ = Describe("FactoryResponse", func() {
 	})
 
 	It("Send should return error code ERR_NO_PARSER_FOUND", func() {
-		r := &FactoryResponse{writer: httptest.NewRecorder(), header: NewHeader(), Body: NewBody()}
-		r.WithContentType(CONTENT_TYPE_JSON)
-		r.WithCharset(CONTENT_CHARSET_DEFAULT)
-		r.WithContent("a_string")
+		w := httptest.NewRecorder()
+		r := &FactoryResponse{ancestor: w, header: NewHeader(), body: NewBody(nil, w)}
+		r.Body().WithContentType(CONTENT_TYPE_JSON)
+		r.Body().WithCharset(CONTENT_CHARSET_DEFAULT)
+		r.Body().Write("a_string")
 		err := r.Send()
 		Expect(err).NotTo(BeNil())
 		Expect(err.(errors.Error).Code()).To(Equal(ERR_NO_PARSER_FOUND))
 	})
 
 	It("Send should send http message", func() {
-		r := &FactoryResponse{writer: httptest.NewRecorder(), header: NewHeader(), Body: NewBody()}
-		r.WithContentType(CONTENT_TYPE_JSON)
-		r.WithCharset(CONTENT_CHARSET_DEFAULT)
+		w := httptest.NewRecorder()
+		r := &FactoryResponse{ancestor: w, header: NewHeader(), body: NewBody(nil, w)}
+		r.Body().WithContentType(CONTENT_TYPE_JSON)
+		r.Body().WithCharset(CONTENT_CHARSET_DEFAULT)
 		r.WithMessage("HTTP NOT FOUND")
 		err := r.Send()
 		Expect(err).To(BeNil())
 	})
 
 	It("Send should return error code ERR_RESPONSE_IS_SENDING", func() {
-		r := &FactoryResponse{writer: httptest.NewRecorder(), header: NewHeader(), Body: NewBody()}
-		r.WithContentType(CONTENT_TYPE_JSON)
-		r.WithCharset(CONTENT_CHARSET_DEFAULT)
+		w := httptest.NewRecorder()
+		r := &FactoryResponse{ancestor: w, header: NewHeader(), body: NewBody(nil, w)}
+		r.Body().WithContentType(CONTENT_TYPE_JSON)
+		r.Body().WithCharset(CONTENT_CHARSET_DEFAULT)
 		r.lock()
 		err := r.Send()
 		Expect(err).NotTo(BeNil())

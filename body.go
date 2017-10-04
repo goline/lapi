@@ -2,29 +2,21 @@ package lapi
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 
 	"github.com/goline/errors"
 )
 
 type Body interface {
+	BodyRW
 	BodyContent
+	BodyFlusher
 	ParserManager
 }
 
 // BodyContent handles body's content
 type BodyContent interface {
-	// Content returns body's content
-	Content() (interface{}, error)
-
-	// WithContent sets body's content
-	WithContent(content interface{}) Body
-
-	// ContentBytes returns body's content as bytes
-	ContentBytes() ([]byte, error)
-
-	// WithContentBytes sets body's content's bytes
-	WithContentBytes(bytes []byte, v interface{}) Body
-
 	// ContentType returns type of body's content
 	ContentType() string
 
@@ -38,69 +30,94 @@ type BodyContent interface {
 	WithCharset(charset string) Body
 }
 
-func NewBody() Body {
+type BodyRW interface {
+	BodyReader
+	BodyWriter
+}
+
+type BodyReader interface {
+	// Read gets value into input
+	Read(input interface{}) error
+}
+
+type BodyWriter interface {
+	// Writes puts output into writer
+	Write(output interface{}) error
+}
+
+type BodyFlusher interface {
+	// Flush sends output to writer
+	Flush() error
+}
+
+func NewBody(reader io.ReadCloser, writer io.Writer) Body {
 	return &FactoryBody{
+		reader: reader,
+		writer: writer,
+
 		ParserManager: NewParserManager(),
 	}
 }
 
 type FactoryBody struct {
 	ParserManager
-	content      interface{}
+	reader       io.ReadCloser
+	writer       io.Writer
 	contentBytes []byte
 	contentType  string
 	charset      string
-	err          error
 }
 
-func (b *FactoryBody) Content() (interface{}, error) {
-	return b.content, b.err
-}
-
-func (b *FactoryBody) WithContent(content interface{}) Body {
-	b.reset()
-
-	p, ok := b.Parser(b.contentType)
-	if ok == true {
-		bytes, err := p.Encode(content)
-		if err != nil {
-			b.err = errors.New(ERR_PARSE_ENCODE_FAILURE, fmt.Sprintf("Unable to encode content. Got %s", err))
-		} else {
-			b.content = content
-			b.contentBytes = bytes
-		}
-	} else {
-		b.err = errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
+func (b *FactoryBody) Read(input interface{}) error {
+	if b.reader == nil {
+		return errors.New(ERR_BODY_READER_MISSING, "There is no readers specified")
 	}
+	defer b.reader.Close()
 
-	return b
-}
-
-func (b *FactoryBody) ContentBytes() ([]byte, error) {
-	return b.contentBytes, b.err
-}
-
-func (b *FactoryBody) WithContentBytes(bytes []byte, v interface{}) Body {
-	b.reset()
-	if v == nil && b.contentType == "" {
-		b.contentBytes = bytes
-		return b
+	bytes, err := ioutil.ReadAll(b.reader)
+	if err != nil {
+		return errors.New(ERR_BODY_READER_FAILURE, fmt.Sprintf("Unable to read resource. Got %s", err.Error()))
 	}
 
 	p, ok := b.Parser(b.contentType)
-	if ok == true {
-		err := p.Decode(bytes, v)
-		if err != nil {
-			b.err = errors.New(ERR_PARSE_DECODE_FAILURE, fmt.Sprintf("Unable to decode content. Got %s", err))
-		} else {
-			b.content = v
-			b.contentBytes = bytes
-		}
-	} else {
-		b.err = errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
+	if ok == false {
+		return errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
 	}
 
-	return b
+	err = p.Decode(bytes, input)
+	if err != nil {
+		return errors.New(ERR_PARSE_DECODE_FAILURE, fmt.Sprintf("Unable to decode content. Got %s", err))
+	}
+
+	return nil
+}
+
+func (b *FactoryBody) Write(output interface{}) error {
+	if b.writer == nil {
+		return errors.New(ERR_BODY_WRITER_MISSING, "Writer must not be nil")
+	}
+
+	p, ok := b.Parser(b.contentType)
+	if ok == false {
+		return errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
+	}
+
+	bytes, err := p.Encode(output)
+	if err != nil {
+		return errors.New(ERR_PARSE_ENCODE_FAILURE, fmt.Sprintf("Unable to encode content. Got %s", err))
+	}
+	b.contentBytes = bytes
+
+	return nil
+}
+
+func (b *FactoryBody) Flush() error {
+	_, err := b.writer.Write(b.contentBytes)
+	if err != nil {
+		return errors.New(ERR_BODY_WRITER_FAILURE, fmt.Sprintf("Unable to write output. Got %s", err.Error()))
+	}
+
+	return nil
 }
 
 func (b *FactoryBody) ContentType() string {
@@ -119,10 +136,4 @@ func (b *FactoryBody) Charset() string {
 func (b *FactoryBody) WithCharset(charset string) Body {
 	b.charset = charset
 	return b
-}
-
-func (b *FactoryBody) reset() {
-	b.content = nil
-	b.contentBytes = make([]byte, 0)
-	b.err = nil
 }
