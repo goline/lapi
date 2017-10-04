@@ -58,7 +58,7 @@ func (r *FactoryRescuer) Rescue(c Connection, v interface{}) error {
 		default:
 			if e.Status() == http.StatusOK {
 				c.Response().WithStatus(http.StatusInternalServerError)
-			} else {
+			} else if c.Response().Status() == http.StatusOK {
 				c.Response().WithStatus(e.Status())
 			}
 		}
