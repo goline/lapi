@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"reflect"
 
 	"github.com/goline/errors"
 )
@@ -97,16 +98,33 @@ func (b *FactoryBody) Read(input interface{}) error {
 }
 
 func (b *FactoryBody) Write(output interface{}) error {
-	p, ok := b.Parser(b.contentType)
-	if ok == false {
-		return errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
+	if output == nil {
+		return nil
 	}
 
-	bytes, err := p.Encode(output)
-	if err != nil {
-		return errors.New(ERR_PARSE_ENCODE_FAILURE, "Unable to encode content").WithDebug(err.Error())
+	t := reflect.TypeOf(output)
+	switch t.Kind() {
+	case reflect.Slice:
+		if t.String() == "[]uint8" {
+			// receives []byte
+			b.contentBytes = reflect.ValueOf(output).Bytes()
+			return nil
+		}
+	case reflect.String:
+		s := output.(string)
+		b.contentBytes = []byte(s)
+	default:
+		p, ok := b.Parser(b.contentType)
+		if ok == false {
+			return errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
+		}
+
+		bytes, err := p.Encode(output)
+		if err != nil {
+			return errors.New(ERR_PARSE_ENCODE_FAILURE, "Unable to encode content").WithDebug(err.Error())
+		}
+		b.contentBytes = bytes
 	}
-	b.contentBytes = bytes
 
 	return nil
 }

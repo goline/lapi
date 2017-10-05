@@ -119,9 +119,22 @@ var _ = Describe("FactoryBody", func() {
 		Expect(i.Price).To(Equal(float64(10.2)))
 	})
 
-	It("Write should return error code ERR_NO_PARSER_FOUND", func() {
+	It("Write should return nil when writing nil", func() {
 		b := &FactoryBody{ParserManager: NewParserManager()}
 		err := b.Write(nil)
+		Expect(err).To(BeNil())
+	})
+
+	It("Write should return nil when writing string", func() {
+		b := &FactoryBody{ParserManager: NewParserManager()}
+		err := b.Write("a string")
+		Expect(err).To(BeNil())
+		Expect(string(b.contentBytes)).To(Equal("a string"))
+	})
+
+	It("Write should return error code ERR_NO_PARSER_FOUND", func() {
+		b := &FactoryBody{ParserManager: NewParserManager()}
+		err := b.Write(new(sampleBodyItem))
 		Expect(err).NotTo(BeNil())
 		Expect(err.(errors.Error).Code()).To(Equal(ERR_NO_PARSER_FOUND))
 	})
@@ -133,6 +146,13 @@ var _ = Describe("FactoryBody", func() {
 		err := b.Write(new(sampleBodyItem))
 		Expect(err).NotTo(BeNil())
 		Expect(err.(errors.Error).Code()).To(Equal(ERR_PARSE_ENCODE_FAILURE))
+	})
+
+	It("Write should return nil when writing bytes", func() {
+		b := &FactoryBody{ParserManager: NewParserManager()}
+		err := b.Write([]byte("sample string"))
+		Expect(err).To(BeNil())
+		Expect(string(b.contentBytes)).To(Equal("sample string"))
 	})
 
 	It("Flush should return error code ERR_BODY_WRITER_MISSING", func() {
