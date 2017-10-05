@@ -159,14 +159,13 @@ func (r *FactoryResponse) Send() error {
 	}
 
 	contentType := r.body.ContentType()
-	if contentType == "" {
-		return errors.New(ERR_CONTENT_TYPE_EMPTY, "Content-Type is required")
-	}
-	charset := r.body.Charset()
-	if charset != "" {
-		r.header.Set("content-type", fmt.Sprintf("%s; charset=%s", contentType, charset))
-	} else {
-		r.header.Set("content-type", contentType)
+	if contentType != "" {
+		charset := r.body.Charset()
+		if charset != "" {
+			r.header.Set("content-type", fmt.Sprintf("%s; charset=%s", contentType, charset))
+		} else {
+			r.header.Set("content-type", contentType)
+		}
 	}
 
 	for _, cookie := range r.cookies {
@@ -182,7 +181,10 @@ func (r *FactoryResponse) Send() error {
 	} else {
 		r.ancestor.WriteHeader(r.status)
 	}
-	r.body.Flush()
+
+	if err := r.body.Flush(); err != nil {
+		return err
+	}
 
 	r.isSent = true
 	return nil

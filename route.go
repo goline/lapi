@@ -212,24 +212,6 @@ func (r *FactoryRoute) Match(request Request) (Route, bool) {
 	return r, true
 }
 
-func (r *FactoryRoute) RequestInput() interface{} {
-	return Clone(r.requestInput)
-}
-
-func (r *FactoryRoute) WithRequestInput(input interface{}) Route {
-	r.requestInput = StructOf(input)
-	return r
-}
-
-func (r *FactoryRoute) ResponseOutput() interface{} {
-	return Clone(r.responseOutput)
-}
-
-func (r *FactoryRoute) WithResponseOutput(output interface{}) Route {
-	r.responseOutput = StructOf(output)
-	return r
-}
-
 func (r *FactoryRoute) Tags() []string {
 	return r.tags
 }

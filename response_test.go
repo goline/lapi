@@ -146,14 +146,6 @@ var _ = Describe("FactoryResponse", func() {
 		Expect(err.(errors.Error).Code()).To(Equal(ERR_RESPONSE_ALREADY_SENT))
 	})
 
-	It("Send should return error code ERR_CONTENT_TYPE_EMPTY", func() {
-		w := httptest.NewRecorder()
-		r := &FactoryResponse{ancestor: w, body: NewBody(nil, w)}
-		err := r.Send()
-		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_CONTENT_TYPE_EMPTY))
-	})
-
 	It("Send should delivery header content-type", func() {
 		w := httptest.NewRecorder()
 		r := &FactoryResponse{ancestor: w, header: NewHeader(), body: NewBody(nil, w)}
@@ -163,17 +155,6 @@ var _ = Describe("FactoryResponse", func() {
 		v, ok := r.header.Get(HEADER_CONTENT_TYPE)
 		Expect(ok).To(BeTrue())
 		Expect(v).To(Equal(fmt.Sprintf("%s; charset=%s", CONTENT_TYPE_JSON, CONTENT_CHARSET_DEFAULT)))
-	})
-
-	It("Send should return error code ERR_NO_PARSER_FOUND", func() {
-		w := httptest.NewRecorder()
-		r := &FactoryResponse{ancestor: w, header: NewHeader(), body: NewBody(nil, w)}
-		r.Body().WithContentType(CONTENT_TYPE_JSON)
-		r.Body().WithCharset(CONTENT_CHARSET_DEFAULT)
-		r.Body().Write("a_string")
-		err := r.Send()
-		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_NO_PARSER_FOUND))
 	})
 
 	It("Send should send http message", func() {
@@ -206,5 +187,16 @@ var _ = Describe("FactoryResponse", func() {
 		Expect(r.IsSent()).To(BeFalse())
 		r.isSent = true
 		Expect(r.IsSent()).To(BeTrue())
+	})
+
+	It("Ancestor should return http.ResponseWriter", func() {
+		r := &FactoryResponse{ancestor: httptest.NewRecorder()}
+		Expect(r.Ancestor()).NotTo(BeNil())
+	})
+
+	It("WithBody should set instance of Body", func() {
+		r := &FactoryResponse{}
+		r.WithBody(NewBody(nil, nil))
+		Expect(r.body).NotTo(BeNil())
 	})
 })

@@ -28,7 +28,10 @@ func (h *SystemHook) TearDown(c Connection, result interface{}, err error) error
 		return nil
 	}
 
-	c.Response().Body().Write(result)
+	if err := c.Response().Body().Write(result); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -39,13 +42,13 @@ func (h *SystemHook) Priority() int {
 
 type ParserHook struct{}
 
-func (h *ParserHook) SetUp(connection Connection) error {
+func (h *ParserHook) SetUp(c Connection) error {
 	parser := new(JsonParser)
-	connection.Request().Body().WithParser(parser)
-	connection.Response().Body().WithParser(parser)
+	c.Request().Body().WithParser(parser)
+	c.Response().Body().WithParser(parser)
 	return nil
 }
 
-func (h *ParserHook) TearDown(connection Connection, result interface{}, err error) error {
+func (h *ParserHook) TearDown(_ Connection, _ interface{}, _ error) error {
 	return nil
 }

@@ -1,6 +1,7 @@
 package lapi
 
 import (
+	"reflect"
 	"strconv"
 )
 
@@ -25,11 +26,11 @@ type Bag interface {
 }
 
 type BagGetter interface {
-	// GetInt64 returns int64 value
-	GetInt64(key string) (int64, bool)
+	// GetInt returns int64 value
+	GetInt(key string) (int64, bool)
 
-	// GetFloat64 returns float64 value
-	GetFloat64(key string) (float64, bool)
+	// GetFloat returns float64 value
+	GetFloat(key string) (float64, bool)
 
 	// GetString returns string value
 	GetString(key string) (string, bool)
@@ -66,19 +67,19 @@ func (b *FactoryBag) All() map[string]interface{} {
 	return b.items
 }
 
-func (b *FactoryBag) GetInt64(key string) (int64, bool) {
+func (b *FactoryBag) GetInt(key string) (int64, bool) {
 	value, ok := b.Get(key)
 	if ok == false {
 		return 0, false
 	}
 
-	switch v := value.(type) {
-	case int:
-		return int64(v), true
-	case int64:
-		return v, true
-	case string:
-		i, err := strconv.ParseInt(v, 10, 64)
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return reflect.ValueOf(value).Int(), true
+	case reflect.String:
+		s := reflect.ValueOf(value).String()
+		i, err := strconv.ParseInt(s, 10, 64)
 		if err == nil {
 			return i, true
 		}
@@ -87,7 +88,7 @@ func (b *FactoryBag) GetInt64(key string) (int64, bool) {
 	return 0, false
 }
 
-func (b *FactoryBag) GetFloat64(key string) (float64, bool) {
+func (b *FactoryBag) GetFloat(key string) (float64, bool) {
 	value, ok := b.Get(key)
 	if ok == false {
 		return 0.0, false

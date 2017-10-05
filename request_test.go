@@ -191,4 +191,20 @@ var _ = Describe("FactoryRequest", func() {
 		Expect(r.Body().ContentType()).To(Equal(CONTENT_TYPE_DEFAULT))
 		Expect(r.Body().Charset()).To(Equal(CONTENT_CHARSET_DEFAULT))
 	})
+
+	It("Body should return instance of Body", func() {
+		r := &FactoryRequest{body: NewBody(nil, nil)}
+		Expect(r.Body()).NotTo(BeNil())
+	})
+
+	It("WithBody should set instance of Body", func() {
+		r := &FactoryRequest{}
+		r.WithBody(NewBody(nil, nil))
+		Expect(r.body).NotTo(BeNil())
+	})
+
+	It("Params should return instance of Bag as parameters", func() {
+		r := &FactoryRequest{params: NewBag()}
+		Expect(r.Params()).NotTo(BeNil())
+	})
 })

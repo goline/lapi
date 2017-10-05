@@ -50,7 +50,7 @@ type BodyFlusher interface {
 	Flush() error
 }
 
-func NewBody(reader io.ReadCloser, writer io.Writer) Body {
+func NewBody(reader io.Reader, writer io.Writer) Body {
 	return &FactoryBody{
 		reader: reader,
 		writer: writer,
@@ -61,7 +61,7 @@ func NewBody(reader io.ReadCloser, writer io.Writer) Body {
 
 type FactoryBody struct {
 	ParserManager
-	reader       io.ReadCloser
+	reader       io.Reader
 	writer       io.Writer
 	contentBytes []byte
 	contentType  string
@@ -72,11 +72,15 @@ func (b *FactoryBody) Read(input interface{}) error {
 	if b.reader == nil {
 		return errors.New(ERR_BODY_READER_MISSING, "There is no readers specified")
 	}
-	defer b.reader.Close()
+	defer func() {
+		if c, ok := b.reader.(io.Closer); ok == true {
+			c.Close()
+		}
+	}()
 
 	bytes, err := ioutil.ReadAll(b.reader)
 	if err != nil {
-		return errors.New(ERR_BODY_READER_FAILURE, fmt.Sprintf("Unable to read resource. Got %s", err.Error()))
+		return errors.New(ERR_BODY_READER_FAILURE, "Unable to read resource.").WithDebug(err.Error())
 	}
 
 	p, ok := b.Parser(b.contentType)
@@ -86,17 +90,13 @@ func (b *FactoryBody) Read(input interface{}) error {
 
 	err = p.Decode(bytes, input)
 	if err != nil {
-		return errors.New(ERR_PARSE_DECODE_FAILURE, fmt.Sprintf("Unable to decode content. Got %s", err))
+		return errors.New(ERR_PARSE_DECODE_FAILURE, "Unable to decode content").WithDebug(err.Error())
 	}
 
 	return nil
 }
 
 func (b *FactoryBody) Write(output interface{}) error {
-	if b.writer == nil {
-		return errors.New(ERR_BODY_WRITER_MISSING, "Writer must not be nil")
-	}
-
 	p, ok := b.Parser(b.contentType)
 	if ok == false {
 		return errors.New(ERR_NO_PARSER_FOUND, fmt.Sprintf("Unable to find an appropriate parser for %s", b.contentType))
@@ -104,7 +104,7 @@ func (b *FactoryBody) Write(output interface{}) error {
 
 	bytes, err := p.Encode(output)
 	if err != nil {
-		return errors.New(ERR_PARSE_ENCODE_FAILURE, fmt.Sprintf("Unable to encode content. Got %s", err))
+		return errors.New(ERR_PARSE_ENCODE_FAILURE, "Unable to encode content").WithDebug(err.Error())
 	}
 	b.contentBytes = bytes
 
@@ -112,9 +112,13 @@ func (b *FactoryBody) Write(output interface{}) error {
 }
 
 func (b *FactoryBody) Flush() error {
+	if b.writer == nil {
+		return errors.New(ERR_BODY_WRITER_MISSING, "Writer must not be nil")
+	}
+
 	_, err := b.writer.Write(b.contentBytes)
 	if err != nil {
-		return errors.New(ERR_BODY_WRITER_FAILURE, fmt.Sprintf("Unable to write output. Got %s", err.Error()))
+		return errors.New(ERR_BODY_WRITER_FAILURE, "Unable to write output").WithDebug(err.Error())
 	}
 
 	return nil

@@ -113,6 +113,9 @@ type RequestParameter interface {
 
 	// WithParam sets parameter by key
 	WithParam(key string, value interface{}) Request
+
+	// Params returns an instance of bag contains all request's parameters
+	Params() Bag
 }
 
 func NewRequest(req *http.Request) Request {
@@ -263,6 +266,10 @@ func (r *FactoryRequest) Param(key string) (value interface{}, ok bool) {
 func (r *FactoryRequest) WithParam(key string, value interface{}) Request {
 	r.params.Set(key, value)
 	return r
+}
+
+func (r *FactoryRequest) Params() Bag {
+	return r.params
 }
 
 func (r *FactoryRequest) parseRequest() {

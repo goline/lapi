@@ -49,20 +49,53 @@ var _ = Describe("FactoryBag", func() {
 		Expect(len(b.All())).To(Equal(2))
 	})
 
-	It("GetInt64 should return int64 value", func() {
+	It("GetInt should return int64 value", func() {
 		b := &FactoryBag{make(map[string]interface{})}
 		b.items["my_int64"] = 10
-		i, ok := b.GetInt64("my_int64")
+		i, ok := b.GetInt("my_int64")
 		Expect(ok).To(BeTrue())
 		Expect(i).To(Equal(int64(10)))
+
+		ii, ok := b.GetInt("my_another_int64")
+		Expect(ok).To(BeFalse())
+		Expect(ii).To(Equal(int64(0)))
+
+		b.items["my_another_int64"] = "12"
+		ii, ok = b.GetInt("my_another_int64")
+		Expect(ok).To(BeTrue())
+		Expect(ii).To(Equal(int64(12)))
+
+		b.items["my_another_int64"] = new(Bag)
+		ii, ok = b.GetInt("my_another_int64")
+		Expect(ok).To(BeFalse())
+		Expect(ii).To(Equal(int64(0)))
 	})
 
-	It("GetFloat64 should return float64 value", func() {
+	It("GetFloat should return float64 value", func() {
 		b := &FactoryBag{make(map[string]interface{})}
 		b.items["my_float64"] = 10.01
-		f, ok := b.GetFloat64("my_float64")
+		f, ok := b.GetFloat("my_float64")
 		Expect(ok).To(BeTrue())
 		Expect(f).To(Equal(float64(10.01)))
+
+		ff, ok := b.GetFloat("my_another_float64")
+		Expect(ok).To(BeFalse())
+		Expect(ff).To(Equal(float64(0.0)))
+
+		b.items["my_another_float64"] = "12.2"
+		ff, ok = b.GetFloat("my_another_float64")
+		Expect(ok).To(BeTrue())
+		Expect(ff).To(Equal(float64(12.2)))
+
+		b.items["my_another_float64"] = float32(12.2)
+		ff, ok = b.GetFloat("my_another_float64")
+		Expect(ok).To(BeTrue())
+		Expect(ff).To(Equal(float64(float32(12.2))))
+
+		b.items["my_another_float64"] = new(Bag)
+		ff, ok = b.GetFloat("my_another_float64")
+		Expect(ok).To(BeFalse())
+		Expect(ff).To(Equal(float64(0.0)))
 	})
 
 	It("GetString should return string value", func() {
@@ -71,5 +104,14 @@ var _ = Describe("FactoryBag", func() {
 		s, ok := b.GetString("my_string")
 		Expect(ok).To(BeTrue())
 		Expect(s).To(Equal("10.01"))
+
+		ss, ok := b.GetString("my_another_string")
+		Expect(ok).To(BeFalse())
+		Expect(ss).To(BeEmpty())
+
+		b.items["my_another_string"] = 12
+		ss, ok = b.GetString("my_another_string")
+		Expect(ok).To(BeFalse())
+		Expect(ss).To(BeEmpty())
 	})
 })

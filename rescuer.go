@@ -70,7 +70,9 @@ func (r *FactoryRescuer) Rescue(c Connection, v interface{}) error {
 		message = fmt.Sprintf("%s", v)
 		c.Response().WithStatus(http.StatusInternalServerError)
 	}
-	c.Response().Body().Write(&ErrorResponse{code, message})
+	if err := c.Response().Body().Write(&ErrorResponse{code, message}); err != nil {
+		return err
+	}
 
 	return nil
 }
