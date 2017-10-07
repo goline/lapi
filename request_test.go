@@ -21,6 +21,20 @@ var _ = Describe("FactoryRequest", func() {
 		Expect(r.Ancestor().Method).To(Equal("GET"))
 	})
 
+	It("parseRequest should parse Query", func() {
+		req, _ := http.NewRequest("GET", "/test?id=5", nil)
+		r := NewRequest(req)
+		id, ok := r.Params().GetString("id")
+		Expect(ok).To(BeTrue())
+		Expect(id).To(Equal("5"))
+
+		req, _ = http.NewRequest("GET", "/test?id=5&id=8", nil)
+		r = NewRequest(req)
+		ids, ok := r.Params().Get("id")
+		Expect(ok).To(BeTrue())
+		Expect(ids).To(Equal([]string{"5", "8"}))
+	})
+
 	It("Id should return string representing for request's id", func() {
 		r := &FactoryRequest{}
 		r.id = "0011"

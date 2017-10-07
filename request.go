@@ -293,7 +293,11 @@ func (r *FactoryRequest) parseRequestAddress() {
 	q := r.ancestor.URL.Query()
 	if len(q) > 0 {
 		for k, v := range q {
-			r.WithParam(k, v)
+			if len(v) == 1 {
+				r.WithParam(k, v[0])
+			} else {
+				r.WithParam(k, v)
+			}
 		}
 	}
 }
