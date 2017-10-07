@@ -27,3 +27,19 @@ func (l *ServerLoader) Load(app App) {
 		panic(errors.New(ERR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing")))
 	}
 }
+
+func NewLoader(runner func(app App), priority int) *ServiceLoader {
+	l := new(ServiceLoader)
+	l.runner = runner
+	l.WithPriority(priority)
+	return l
+}
+
+type ServiceLoader struct {
+	PriorityAware
+	runner func(app App)
+}
+
+func (l *ServiceLoader) Load(app App) {
+	l.runner(app)
+}

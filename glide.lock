@@ -1,5 +1,5 @@
 hash: 643e90b7a27f438bdd93bf6543aed1dbee7a69089e0894c794f9eccbd8f6723e
-updated: 2017-10-05T12:00:52.865675566+07:00
+updated: 2017-10-07T10:03:06.397569795+07:00
 imports:
 - name: github.com/goline/errors
   version: 5496f56181d58117534ce2d0f8b3357e8072dbf7
@@ -47,11 +47,11 @@ testImports:
   - html/atom
   - html/charset
 - name: golang.org/x/sys
-  version: 314a259e304ff91bd6985da2a7149bbf91237993
+  version: ebfc5b4631820b793c9010c87fd8fef0f39eb082
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 1cbadb444a806fd9430d14ad08967ed91da4fa0a
+  version: 825fc78a2fd6fa0a5447e300189e3219e05e1f25
   subpackages:
   - encoding
   - encoding/charmap
