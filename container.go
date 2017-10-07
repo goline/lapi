@@ -18,19 +18,19 @@ type Container interface {
 // Binder uses to bind a concrete to an abstract
 type Binder interface {
 	// Bind stores a concrete of an abstract, as default sharing is enable
-	Bind(abstract interface{}, concrete interface{}) error
+	Bind(abstract interface{}, concrete interface{}) errors.Error
 }
 
 // Resolver helps to resolve dependencies
 type Resolver interface {
 	// Resolve processes and returns a concrete of proposed abstract
-	Resolve(abstract interface{}, args ...interface{}) (concrete interface{}, err error)
+	Resolve(abstract interface{}, args ...interface{}) (concrete interface{}, err errors.Error)
 }
 
 // Injector works as a tool to inject dependencies
 type Injector interface {
 	// Inject resolves target's dependencies
-	Inject(target interface{}) error
+	Inject(target interface{}) errors.Error
 }
 
 // ContainerAware handles a container
@@ -50,7 +50,7 @@ type FactoryContainer struct {
 	items *sync.Map
 }
 
-func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) error {
+func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) errors.Error {
 	at, isInterface := c.interfaceOf(abstract)
 	if isInterface == nil {
 		return c.bindInterface(at, concrete)
@@ -64,7 +64,7 @@ func (c *FactoryContainer) Bind(abstract interface{}, concrete interface{}) erro
 	return errors.New(ERR_BIND_INVALID_ARGUMENTS, "Binding error! Invalid arguments.")
 }
 
-func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (concrete interface{}, err error) {
+func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (concrete interface{}, err errors.Error) {
 	at, isInterface := c.interfaceOf(abstract)
 	if isInterface == nil {
 		return c.resolveInterface(at, args...)
@@ -78,7 +78,7 @@ func (c *FactoryContainer) Resolve(abstract interface{}, args ...interface{}) (c
 	return nil, errors.New(ERR_RESOLVE_INVALID_ARGUMENTS, "Resolving error! Invalid arguments.")
 }
 
-func (c *FactoryContainer) Inject(target interface{}) error {
+func (c *FactoryContainer) Inject(target interface{}) errors.Error {
 	t := reflect.TypeOf(target)
 	switch t.Kind() {
 	case reflect.Ptr:
@@ -118,7 +118,7 @@ func (c *FactoryContainer) Inject(target interface{}) error {
 	return nil
 }
 
-func (c *FactoryContainer) bindInterface(at reflect.Type, concrete interface{}) error {
+func (c *FactoryContainer) bindInterface(at reflect.Type, concrete interface{}) errors.Error {
 	ct := reflect.TypeOf(concrete)
 	switch ct.Kind() {
 	case reflect.Func:
@@ -134,7 +134,7 @@ func (c *FactoryContainer) bindInterface(at reflect.Type, concrete interface{}) 
 	return nil
 }
 
-func (c *FactoryContainer) bindStruct(at reflect.Type, concrete interface{}) error {
+func (c *FactoryContainer) bindStruct(at reflect.Type, concrete interface{}) errors.Error {
 	ct, err := c.structOf(concrete)
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func (c *FactoryContainer) bindStruct(at reflect.Type, concrete interface{}) err
 	return nil
 }
 
-func (c *FactoryContainer) resolveInterface(at reflect.Type, args ...interface{}) (concrete interface{}, err error) {
+func (c *FactoryContainer) resolveInterface(at reflect.Type, args ...interface{}) (concrete interface{}, err errors.Error) {
 	v, ok := c.items.Load(at.String())
 	if ok == false {
 		return nil, errors.New(ERR_RESOLVE_NOT_EXIST_ABSTRACT, fmt.Sprintf("%v is not bound yet", at))
@@ -165,7 +165,7 @@ func (c *FactoryContainer) resolveInterface(at reflect.Type, args ...interface{}
 	}
 }
 
-func (c *FactoryContainer) resolveStruct(at reflect.Type, args ...interface{}) (concrete interface{}, err error) {
+func (c *FactoryContainer) resolveStruct(at reflect.Type, args ...interface{}) (concrete interface{}, err errors.Error) {
 	v, ok := c.items.Load(at.String())
 	if ok == false {
 		return nil, errors.New(ERR_RESOLVE_NOT_EXIST_ABSTRACT, fmt.Sprintf("%v is not bound yet", at))
@@ -180,7 +180,7 @@ func (c *FactoryContainer) resolveStruct(at reflect.Type, args ...interface{}) (
 	}
 }
 
-func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, error) {
+func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, errors.Error) {
 	if t, ok := value.(reflect.Type); ok == true {
 		return c.structOfType(t)
 	}
@@ -197,7 +197,7 @@ func (c *FactoryContainer) structOf(value interface{}) (reflect.Type, error) {
 	return t, nil
 }
 
-func (c *FactoryContainer) structOfType(t reflect.Type) (reflect.Type, error) {
+func (c *FactoryContainer) structOfType(t reflect.Type) (reflect.Type, errors.Error) {
 	switch t.Kind() {
 	case reflect.Struct:
 		return t, nil
@@ -208,7 +208,7 @@ func (c *FactoryContainer) structOfType(t reflect.Type) (reflect.Type, error) {
 	}
 }
 
-func (c *FactoryContainer) interfaceOf(value interface{}) (reflect.Type, error) {
+func (c *FactoryContainer) interfaceOf(value interface{}) (reflect.Type, errors.Error) {
 	if t, ok := value.(reflect.Type); ok == true && t.Kind() == reflect.Interface {
 		return t, nil
 	}
@@ -238,7 +238,7 @@ func (c *FactoryContainer) instanceOf(abstract reflect.Type, concrete reflect.Ty
 	}
 }
 
-func (c *FactoryContainer) resolveFunc(value reflect.Value, args ...interface{}) (concrete interface{}, err error) {
+func (c *FactoryContainer) resolveFunc(value reflect.Value, args ...interface{}) (concrete interface{}, err errors.Error) {
 	t := value.Type()
 	if len(args) != t.NumIn() {
 		return nil, errors.New(ERR_RESOLVE_INSUFFICIENT_ARGUMENTS, fmt.Sprintf("Expects to have %v input arguments. Got %v", t.NumIn(), len(args)))

@@ -1,6 +1,7 @@
 package lapi
 
 import (
+	"github.com/goline/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -15,14 +16,16 @@ var _ = Describe("Route", func() {
 
 type routeHandler struct{}
 
-func (h *routeHandler) Handle(connection Connection) (interface{}, error) {
+func (h *routeHandler) Handle(connection Connection) (interface{}, errors.Error) {
 	return nil, nil
 }
 
 type routeHook struct{}
 
-func (h *routeHook) SetUp(connection Connection) error                                   { return nil }
-func (h *routeHook) TearDown(connection Connection, result interface{}, err error) error { return nil }
+func (h *routeHook) SetUp(connection Connection) errors.Error { return nil }
+func (h *routeHook) TearDown(connection Connection, result interface{}, err errors.Error) errors.Error {
+	return nil
+}
 
 type sampleRequestInput struct{}
 type sampleResponseOutput struct{}

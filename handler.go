@@ -1,9 +1,11 @@
 package lapi
 
+import "github.com/goline/errors"
+
 // Handler is a request's handler
 type Handler interface {
 	// Handle performs logic for solving request
-	Handle(connection Connection) (interface{}, error)
+	Handle(connection Connection) (interface{}, errors.Error)
 }
 
 // IOHandler describes input and output for handler

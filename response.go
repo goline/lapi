@@ -67,7 +67,7 @@ type ResponseSender interface {
 	// Send flushes response out
 	// It requires Content-Type is set before changing its content,
 	// as an error will be returned when putting content while content-type is empty
-	Send() error
+	Send() errors.Error
 
 	// IsSent returns true if response has already been sent
 	// false if otherwise
@@ -144,7 +144,7 @@ func (r *FactoryResponse) WithCookies(cookies []*http.Cookie) Response {
 	return r
 }
 
-func (r *FactoryResponse) Send() error {
+func (r *FactoryResponse) Send() errors.Error {
 	if r.lock() == true {
 		return errors.New(ERR_RESPONSE_IS_SENDING, "Sending response is in progress")
 	}

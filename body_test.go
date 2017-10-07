@@ -4,6 +4,7 @@ import (
 	"github.com/goline/errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"strings"
 )
 
@@ -83,21 +84,21 @@ var _ = Describe("FactoryBody", func() {
 		b := &FactoryBody{}
 		err := b.Read(nil)
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_BODY_READER_MISSING))
+		Expect(err.Code()).To(Equal(ERR_BODY_READER_MISSING))
 	})
 
 	It("Read should return error code ERR_BODY_READER_FAILURE", func() {
 		b := &FactoryBody{reader: new(sampleIOReader)}
 		err := b.Read(nil)
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_BODY_READER_FAILURE))
+		Expect(err.Code()).To(Equal(ERR_BODY_READER_FAILURE))
 	})
 
 	It("Read should return error code ERR_NO_PARSER_FOUND", func() {
 		b := &FactoryBody{reader: strings.NewReader(`{"status": true}`), ParserManager: NewParserManager()}
 		err := b.Read(nil)
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_NO_PARSER_FOUND))
+		Expect(err.Code()).To(Equal(ERR_NO_PARSER_FOUND))
 	})
 
 	It("Read should return error code ERR_PARSE_DECODE_FAILURE", func() {
@@ -106,7 +107,7 @@ var _ = Describe("FactoryBody", func() {
 		b.WithContentType(CONTENT_TYPE_JSON)
 		err := b.Read(nil)
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_PARSE_DECODE_FAILURE))
+		Expect(err.Code()).To(Equal(ERR_PARSE_DECODE_FAILURE))
 	})
 
 	It("Read should return nil", func() {
@@ -136,7 +137,7 @@ var _ = Describe("FactoryBody", func() {
 		b := &FactoryBody{ParserManager: NewParserManager()}
 		err := b.Write(new(sampleBodyItem))
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_NO_PARSER_FOUND))
+		Expect(err.Code()).To(Equal(ERR_NO_PARSER_FOUND))
 	})
 
 	It("Write should return error code ERR_PARSE_ENCODE_FAILURE", func() {
@@ -145,7 +146,7 @@ var _ = Describe("FactoryBody", func() {
 		b.WithContentType(CONTENT_TYPE_JSON)
 		err := b.Write(new(sampleBodyItem))
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_PARSE_ENCODE_FAILURE))
+		Expect(err.Code()).To(Equal(ERR_PARSE_ENCODE_FAILURE))
 	})
 
 	It("Write should return nil when writing bytes", func() {
@@ -159,6 +160,6 @@ var _ = Describe("FactoryBody", func() {
 		b := &FactoryBody{}
 		err := b.Flush()
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_BODY_WRITER_MISSING))
+		Expect(err.Code()).To(Equal(ERR_BODY_WRITER_MISSING))
 	})
 })

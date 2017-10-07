@@ -71,7 +71,7 @@ type RouteGrouper interface {
 // RouteMatcher matches request to route
 type RouteDispatcher interface {
 	// Route performs routing
-	Route(request Request) error
+	Route(request Request) errors.Error
 }
 
 // RouteManager manages inner routes
@@ -220,7 +220,7 @@ func (r *FactoryRouter) Remove(name string) Router {
 	return r
 }
 
-func (r *FactoryRouter) Route(request Request) error {
+func (r *FactoryRouter) Route(request Request) errors.Error {
 	for _, route := range r.routes {
 		if matchedRoute, ok := route.Match(request); ok == true {
 			request.WithRoute(matchedRoute)

@@ -53,14 +53,14 @@ var _ = Describe("FactoryContainer", func() {
 		c := NewContainer()
 		err := c.Bind("string", &errors.FactoryError{})
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_BIND_INVALID_ARGUMENTS))
+		Expect(err.Code()).To(Equal(ERR_BIND_INVALID_ARGUMENTS))
 	})
 
 	It("Bind should return error code ERR_BIND_NOT_IMPLEMENT_INTERFACE", func() {
 		c := NewContainer()
 		err := c.Bind((*Bag)(nil), &errors.FactoryError{})
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_BIND_NOT_IMPLEMENT_INTERFACE))
+		Expect(err.Code()).To(Equal(ERR_BIND_NOT_IMPLEMENT_INTERFACE))
 	})
 
 	It("Bind should return error code ERR_BIND_INVALID_CONCRETE", func() {
@@ -71,7 +71,7 @@ var _ = Describe("FactoryContainer", func() {
 		for _, i := range a {
 			err := c.Bind((*Bag)(nil), i)
 			Expect(err).NotTo(BeNil())
-			Expect(err.(errors.Error).Code()).To(Equal(ERR_BIND_INVALID_CONCRETE))
+			Expect(err.Code()).To(Equal(ERR_BIND_INVALID_CONCRETE))
 		}
 	})
 
@@ -85,14 +85,14 @@ var _ = Describe("FactoryContainer", func() {
 		c := NewContainer()
 		err := c.Bind(FactoryBag{}, "not_a_struct")
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_BIND_INVALID_STRUCT))
+		Expect(err.Code()).To(Equal(ERR_BIND_INVALID_STRUCT))
 	})
 
 	It("Bind should return error code ERR_BIND_INVALID_STRUCT_CONCRETE", func() {
 		c := NewContainer()
 		err := c.Bind(FactoryBag{}, &errors.FactoryError{})
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_BIND_INVALID_STRUCT_CONCRETE))
+		Expect(err.Code()).To(Equal(ERR_BIND_INVALID_STRUCT_CONCRETE))
 	})
 
 	It("Bind should return nil when binding function", func() {
@@ -119,7 +119,7 @@ var _ = Describe("FactoryContainer", func() {
 		c := NewContainer()
 		_, err := c.Resolve(&FactoryBag{})
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_RESOLVE_NOT_EXIST_ABSTRACT))
+		Expect(err.Code()).To(Equal(ERR_RESOLVE_NOT_EXIST_ABSTRACT))
 	})
 
 	It("Resolve should return error code ERR_RESOLVE_INSUFFICIENT_ARGUMENTS", func() {
@@ -129,7 +129,7 @@ var _ = Describe("FactoryContainer", func() {
 		})
 		_, err := c.Resolve((*errors.Error)(nil), "my_code", "my_message")
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_RESOLVE_INSUFFICIENT_ARGUMENTS))
+		Expect(err.Code()).To(Equal(ERR_RESOLVE_INSUFFICIENT_ARGUMENTS))
 	})
 
 	It("Resolve should return error code ERR_RESOLVE_NON_VALUES_RETURNED", func() {
@@ -137,7 +137,7 @@ var _ = Describe("FactoryContainer", func() {
 		c.Bind((*errors.Error)(nil), func(code string, message string) {})
 		_, err := c.Resolve((*errors.Error)(nil), "my_code", "my_message")
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_RESOLVE_NON_VALUES_RETURNED))
+		Expect(err.Code()).To(Equal(ERR_RESOLVE_NON_VALUES_RETURNED))
 	})
 
 	It("Resolve should return nil", func() {
@@ -170,7 +170,7 @@ var _ = Describe("FactoryContainer", func() {
 		c := NewContainer()
 		_, err := c.Resolve("string")
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_RESOLVE_INVALID_ARGUMENTS))
+		Expect(err.Code()).To(Equal(ERR_RESOLVE_INVALID_ARGUMENTS))
 	})
 
 	It("Inject should return error code ERR_INJECT_INVALID_TARGET_TYPE", func() {
@@ -178,7 +178,7 @@ var _ = Describe("FactoryContainer", func() {
 		e := facErr{"my_code", "my_message"}
 		err := c.Inject(e)
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_INJECT_INVALID_TARGET_TYPE))
+		Expect(err.Code()).To(Equal(ERR_INJECT_INVALID_TARGET_TYPE))
 	})
 
 	It("Inject should return error code ERR_RESOLVE_NOT_EXIST_ABSTRACT", func() {
@@ -186,7 +186,7 @@ var _ = Describe("FactoryContainer", func() {
 		in := &InjectErrorResolveErrorNotExistAbstract{}
 		err := c.Inject(in)
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_RESOLVE_NOT_EXIST_ABSTRACT))
+		Expect(err.Code()).To(Equal(ERR_RESOLVE_NOT_EXIST_ABSTRACT))
 	})
 
 	It("Inject should return nil", func() {

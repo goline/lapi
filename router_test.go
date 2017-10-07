@@ -173,7 +173,7 @@ var _ = Describe("FactoryRouter", func() {
 		req.WithMethod(http.MethodPost).WithUri("/test")
 		err := r.Route(req)
 		Expect(err).NotTo(BeNil())
-		Expect(err.(errors.Error).Code()).To(Equal(ERR_HTTP_NOT_FOUND))
+		Expect(err.Code()).To(Equal(ERR_HTTP_NOT_FOUND))
 	})
 
 	It("WithHook should register hook for all routes", func() {

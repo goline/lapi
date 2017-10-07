@@ -38,17 +38,17 @@ type BodyRW interface {
 
 type BodyReader interface {
 	// Read gets value into input
-	Read(input interface{}) error
+	Read(input interface{}) errors.Error
 }
 
 type BodyWriter interface {
 	// Writes puts output into writer
-	Write(output interface{}) error
+	Write(output interface{}) errors.Error
 }
 
 type BodyFlusher interface {
 	// Flush sends output to writer
-	Flush() error
+	Flush() errors.Error
 }
 
 func NewBody(reader io.Reader, writer io.Writer) Body {
@@ -69,7 +69,7 @@ type FactoryBody struct {
 	charset      string
 }
 
-func (b *FactoryBody) Read(input interface{}) error {
+func (b *FactoryBody) Read(input interface{}) errors.Error {
 	if b.reader == nil {
 		return errors.New(ERR_BODY_READER_MISSING, "There is no readers specified")
 	}
@@ -97,7 +97,7 @@ func (b *FactoryBody) Read(input interface{}) error {
 	return nil
 }
 
-func (b *FactoryBody) Write(output interface{}) error {
+func (b *FactoryBody) Write(output interface{}) errors.Error {
 	if output == nil {
 		return nil
 	}
@@ -129,7 +129,7 @@ func (b *FactoryBody) Write(output interface{}) error {
 	return nil
 }
 
-func (b *FactoryBody) Flush() error {
+func (b *FactoryBody) Flush() errors.Error {
 	if b.writer == nil {
 		return errors.New(ERR_BODY_WRITER_MISSING, "Writer must not be nil")
 	}
