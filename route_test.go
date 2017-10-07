@@ -80,6 +80,18 @@ var _ = Describe("FactoryRoute", func() {
 		Expect(r.uri).To(Equal("/test/api"))
 	})
 
+	It("WithUri should handle autoEnding correctly", func() {
+		r := &FactoryRoute{pvHost: &patternVerifier{}, pvUri: &patternVerifier{}, autoEnding: true}
+		r.WithUri("/test/api")
+		Expect(r.uri).To(Equal("/test/api"))
+		Expect(r.pvUri.pattern).To(Equal("/test/api$"))
+
+		r.autoEnding = false
+		r.WithUri("/test/api")
+		Expect(r.uri).To(Equal("/test/api"))
+		Expect(r.pvUri.pattern).To(Equal("/test/api"))
+	})
+
 	It("Handler should return route's handler", func() {
 		r := &FactoryRoute{}
 		r.handler = &routeHandler{}

@@ -88,10 +88,11 @@ type RouteTagger interface {
 
 func NewRoute(method string, uri string, handler Handler) Route {
 	r := &FactoryRoute{
-		pvHost: &patternVerifier{},
-		pvUri:  &patternVerifier{},
-		hooks:  make(map[int]*Slice),
-		tags:   make([]string, 0),
+		pvHost:     &patternVerifier{},
+		pvUri:      &patternVerifier{},
+		hooks:      make(map[int]*Slice),
+		tags:       make([]string, 0),
+		autoEnding: true,
 	}
 	return r.
 		WithMethod(method).
@@ -112,6 +113,9 @@ type FactoryRoute struct {
 	requestInput   reflect.Type
 	responseOutput reflect.Type
 	tags           []string
+
+	// Automatically add ending character "$" to uri
+	autoEnding bool
 }
 
 type patternVerifier struct {
@@ -158,6 +162,10 @@ func (r *FactoryRoute) Uri() string {
 func (r *FactoryRoute) WithUri(uri string) Route {
 	var err error
 	r.uri = uri
+	if r.autoEnding && uri[len(uri)-1:] != "$" {
+		uri = uri + "$"
+	}
+
 	r.pvUri.pattern, r.pvUri.keys = r.extractKeyPattern(uri)
 	r.pvUri.reg, err = regexp.Compile(r.pvUri.pattern)
 	PanicOnError(err)
