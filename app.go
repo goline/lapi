@@ -154,6 +154,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	PanicOnError(a.router.Route(connection.Request()))
 	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
 		if hook, ok := item.(Hook); ok == true {
+			defer a.forceSendResponse(connection)
 			defer a.forceRecover(connection)
 			PanicOnError(hook.SetUp(connection))
 		}
@@ -174,6 +175,7 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	result, err := handler.Handle(connection)
 	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
 		if hook, ok := item.(Hook); ok == true {
+			defer a.forceSendResponse(connection)
 			defer a.forceRecover(connection)
 			PanicOnError(hook.TearDown(connection, result, err))
 		}
