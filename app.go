@@ -154,7 +154,6 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	PanicOnError(a.router.Route(connection.Request()))
 	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
 		if hook, ok := item.(Hook); ok == true {
-			defer a.forceSendResponse(connection)
 			defer a.forceRecover(connection)
 			PanicOnError(hook.SetUp(connection))
 		}
@@ -175,7 +174,6 @@ func (a *FactoryApp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	result, err := handler.Handle(connection)
 	Parallel(connection.Request().Route().Hooks(), func(item interface{}) {
 		if hook, ok := item.(Hook); ok == true {
-			defer a.forceSendResponse(connection)
 			defer a.forceRecover(connection)
 			PanicOnError(hook.TearDown(connection, result, err))
 		}
@@ -191,6 +189,11 @@ func (a *FactoryApp) forceSendResponse(connection Connection) {
 func (a *FactoryApp) forceRecover(connection Connection) {
 	if r := recover(); r != nil {
 		PanicOnError(a.rescuer.Rescue(connection, r))
+
+		// After handling error, we must send response out
+		// However, we don't use defer here, as we don't want
+		// to send any response if error is not handled well
+		a.forceSendResponse(connection)
 	}
 }
 
