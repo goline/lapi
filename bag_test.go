@@ -114,4 +114,36 @@ var _ = Describe("FactoryBag", func() {
 		Expect(ok).To(BeFalse())
 		Expect(ss).To(BeEmpty())
 	})
+
+	It("GetBool should return boolean value", func() {
+		b := &FactoryBag{make(map[string]interface{})}
+		b.items["my_bool"] = true
+		v, ok := b.GetBool("my_bool")
+		Expect(ok).To(BeTrue())
+		Expect(v).To(BeTrue())
+
+		vv, ok := b.GetBool("my_another_bool")
+		Expect(ok).To(BeFalse())
+		Expect(vv).To(BeFalse())
+
+		b.items["my_another_bool"] = "true"
+		vv, ok = b.GetBool("my_another_bool")
+		Expect(ok).To(BeTrue())
+		Expect(vv).To(BeTrue())
+
+		b.items["my_another_bool"] = "1"
+		vv, ok = b.GetBool("my_another_bool")
+		Expect(ok).To(BeTrue())
+		Expect(vv).To(BeTrue())
+
+		b.items["my_bool"] = "false"
+		vv, ok = b.GetBool("my_bool")
+		Expect(ok).To(BeTrue())
+		Expect(vv).To(BeFalse())
+
+		b.items["my_bool"] = "0"
+		vv, ok = b.GetBool("my_bool")
+		Expect(ok).To(BeTrue())
+		Expect(vv).To(BeFalse())
+	})
 })

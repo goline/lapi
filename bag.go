@@ -3,6 +3,7 @@ package lapi
 import (
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 // Bag manages key-value pairs
@@ -34,6 +35,9 @@ type BagGetter interface {
 
 	// GetString returns string value
 	GetString(key string) (string, bool)
+
+	// GetBool returns boolean value
+	GetBool(key string) (bool, bool)
 }
 
 // NewBag returns an instance of Bag
@@ -121,4 +125,34 @@ func (b *FactoryBag) GetString(key string) (string, bool) {
 	}
 
 	return v, true
+}
+
+func (b *FactoryBag) GetBool(key string) (bool, bool) {
+	value, ok := b.Get(key)
+	if ok == false {
+		return false, false
+	}
+
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Bool:
+		return reflect.ValueOf(value).Bool(), true
+	case reflect.String:
+		v := reflect.ValueOf(value).String()
+		if strings.Compare(v, "true") == 0 {
+			return true, true
+		} else if strings.Compare(v, "false") == 0 {
+			return false, true
+		}
+
+		i, err := strconv.ParseInt(v, 10, 64)
+		if err == nil {
+			return i == int64(1), true
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return reflect.ValueOf(value).Int() == int64(1), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return reflect.ValueOf(value).Uint() == uint64(1), true
+	}
+
+	return false, false
 }
