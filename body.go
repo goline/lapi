@@ -103,13 +103,12 @@ func (b *FactoryBody) Write(output interface{}) errors.Error {
 	}
 
 	t := reflect.TypeOf(output)
+	if t.String() == "[]uint8" {
+		// receives []byte
+		b.contentBytes = reflect.ValueOf(output).Bytes()
+		return nil
+	}
 	switch t.Kind() {
-	case reflect.Slice:
-		if t.String() == "[]uint8" {
-			// receives []byte
-			b.contentBytes = reflect.ValueOf(output).Bytes()
-			return nil
-		}
 	case reflect.String:
 		s := output.(string)
 		b.contentBytes = []byte(s)
