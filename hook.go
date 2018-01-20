@@ -24,7 +24,7 @@ type HaltableHook interface {
 }
 
 // SystemHook acts as mandatory hook
-type SystemHook struct {}
+type SystemHook struct{}
 
 func (h *SystemHook) TearDown(c Connection, result interface{}, err errors.Error) errors.Error {
 	if err != nil {
@@ -48,7 +48,7 @@ func (h *SystemHook) Priority() int {
 	return PRIORITY_SYSTEM_HOOK
 }
 
-type ParserHook struct {}
+type ParserHook struct{}
 
 func (h *ParserHook) SetUp(c Connection) errors.Error {
 	parser := new(JsonParser)
