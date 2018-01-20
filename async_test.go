@@ -71,4 +71,19 @@ var _ = Describe("Async", func() {
 		err := async.Run()
 		Expect(err).To(BeNil())
 	})
+
+	It("Run should run all runners unless there is an error", func() {
+		var async Async
+		for i := 1; i < 10; i++ {
+			async.Add(func(index int) errors.Error {
+				if index == 3 {
+					return errors.New("STOP", fmt.Sprintf("%d", index))
+				}
+				return nil
+			}, i)
+		}
+
+		err := async.Run()
+		Expect(err).NotTo(BeNil())
+	})
 })

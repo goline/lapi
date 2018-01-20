@@ -29,7 +29,7 @@ func (a *Async) Run() errors.Error {
 	fin := 1
 	ec := make(chan errors.Error, 1)
 	for _, runner := range a.runners {
-		go func(runner asyncRunner) {
+		go func(runner asyncRunner, fin int) {
 			in := make([]reflect.Value, len(runner.arguments))
 			for i, argument := range runner.arguments {
 				in[i] = reflect.ValueOf(argument)
@@ -44,7 +44,7 @@ func (a *Async) Run() errors.Error {
 			} else {
 				ec <- v.Interface().(errors.Error)
 			}
-		}(runner)
+		}(runner, fin)
 	}
 
 	return <-ec
