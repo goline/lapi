@@ -26,10 +26,10 @@ type AppLoader interface {
 
 type AppConfigger interface {
 	// Config returns application's configuration
-	Config() interface{}
+	Config() Bag
 
 	// WithConfig sets application's config
-	WithConfig(config interface{}) App
+	WithConfig(config Bag) App
 }
 
 // AppRouter handles router
@@ -63,11 +63,12 @@ func NewApp() App {
 		router:    NewRouter(),
 		container: NewContainer(),
 		rescuer:   NewRescuer(),
+		config:    NewBag(),
 	}
 }
 
 type FactoryApp struct {
-	config    interface{}
+	config    Bag
 	container Container
 	loaders   map[int]*Slice
 	router    Router
@@ -88,11 +89,11 @@ func (a *FactoryApp) WithLoader(loader Loader) App {
 	return a
 }
 
-func (a *FactoryApp) Config() interface{} {
+func (a *FactoryApp) Config() Bag {
 	return a.config
 }
 
-func (a *FactoryApp) WithConfig(config interface{}) App {
+func (a *FactoryApp) WithConfig(config Bag) App {
 	a.config = config
 	return a
 }
@@ -199,13 +200,7 @@ func (a *FactoryApp) forceRecover(connection Connection) {
 
 func (a *FactoryApp) setUpConnection(w http.ResponseWriter, r *http.Request) Connection {
 	request := NewRequest(r)
-	response := NewResponse(w)
-
-	// makes request and response have same
-	// content-type and charset by default
-	response.Body().
-		WithContentType(request.Body().ContentType()).
-		WithCharset(request.Body().Charset())
+	response := NewJsonResponse(w)
 
 	return NewConnection(request, response)
 }

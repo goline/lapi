@@ -8,9 +8,6 @@ import (
 
 // Bag manages key-value pairs
 type Bag interface {
-	// Get returns value of specific key
-	Get(key string) (interface{}, bool)
-
 	// Set allows to set value for a proposed key
 	Set(key string, value interface{})
 
@@ -27,6 +24,9 @@ type Bag interface {
 }
 
 type BagGetter interface {
+	// Get returns value of specific key
+	Get(key string) (interface{}, bool)
+
 	// GetInt returns int64 value
 	GetInt(key string) (int64, bool)
 

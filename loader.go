@@ -21,8 +21,8 @@ func (l *ServerLoader) Load(app App) {
 	PanicOnError(app.Container().Inject(app.Rescuer()))
 
 	http.Handle("/", app)
-	if c, ok := app.Config().(ServerConfig); ok == true {
-		PanicOnError(http.ListenAndServe(c.Address(), nil))
+	if address, ok := app.Config().GetString("server.address"); ok {
+		PanicOnError(http.ListenAndServe(address, nil))
 	} else {
 		panic(errors.New(ERR_SERVER_CONFIG_MISSING, fmt.Sprint("Server configuration is missing")))
 	}

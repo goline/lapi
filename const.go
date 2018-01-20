@@ -63,6 +63,7 @@ const (
 	SCHEME_HTTPS = "https"
 
 	HEADER_CONTENT_TYPE = "content-type"
+	HEADER_LOCATION     = "location"
 
 	CONTENT_TYPE_JSON       = "application/json"
 	CONTENT_TYPE_XML        = "application/xml"

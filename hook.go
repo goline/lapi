@@ -48,7 +48,7 @@ func (h *SystemHook) Priority() int {
 	return PRIORITY_SYSTEM_HOOK
 }
 
-type ParserHook struct{}
+type ParserHook struct {}
 
 func (h *ParserHook) SetUp(c Connection) errors.Error {
 	parser := new(JsonParser)

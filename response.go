@@ -84,6 +84,20 @@ func NewResponse(w http.ResponseWriter) Response {
 	}
 }
 
+func NewJsonResponse(w http.ResponseWriter) Response {
+	response := NewResponse(w)
+	response.Body().WithContentType(CONTENT_TYPE_JSON).WithCharset(CONTENT_CHARSET_DEFAULT)
+
+	return response
+}
+
+func NewRedirectResponse(w http.ResponseWriter, to string) Response {
+	response := NewResponse(w)
+	response.Header().Set(HEADER_LOCATION, to)
+
+	return response
+}
+
 type FactoryResponse struct {
 	ancestor  http.ResponseWriter
 	status    int
